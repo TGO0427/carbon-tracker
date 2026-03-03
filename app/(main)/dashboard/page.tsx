@@ -124,7 +124,11 @@ export default function DashboardPage() {
               <h3 className="text-base font-semibold text-gray-900">Monthly Trend</h3>
               <span className="text-sm text-gray-400">Emissions by scope</span>
             </div>
-            <PrintButton chartRef={trendRef} title="Monthly Trend" />
+            <PrintButton chartRef={trendRef} title="Monthly Trend" getData={() => ({
+              summary: `Monthly emissions trend showing Scope 1, 2, and 3 breakdown. Total: ${formatNumber(total)} tCO2e.`,
+              headers: ["Month", "Scope 1 (tCO2e)", "Scope 2 (tCO2e)", "Scope 3 (tCO2e)", "Total (tCO2e)"],
+              rows: trend.map((t) => [t.month, t.scope1.toFixed(2), t.scope2.toFixed(2), t.scope3.toFixed(2), t.total.toFixed(2)]),
+            })} />
           </div>
           {trend.length > 0 ? (
             <ResponsiveContainer width="100%" height={280}>
@@ -156,7 +160,11 @@ export default function DashboardPage() {
               <h3 className="text-base font-semibold text-gray-900">Scope Distribution</h3>
               <span className="text-sm text-gray-400">By scope</span>
             </div>
-            <PrintButton chartRef={donutRef} title="Scope Distribution" />
+            <PrintButton chartRef={donutRef} title="Scope Distribution" getData={() => ({
+              summary: `Scope distribution breakdown. Total emissions: ${formatNumber(total)} tCO2e.`,
+              headers: ["Scope", "Emissions (tCO2e)", "Percentage"],
+              rows: byScope.map((s) => [s.label, s.total.toFixed(2), `${s.percentage.toFixed(1)}%`]),
+            })} />
           </div>
           {byScope.length > 0 && byScope.some((s) => s.total > 0) ? (
             <ResponsiveContainer width="100%" height={280}>
@@ -204,7 +212,11 @@ export default function DashboardPage() {
               <h3 className="text-base font-semibold text-gray-900">By Source</h3>
               <span className="text-sm text-gray-400">Total emissions by activity</span>
             </div>
-            <PrintButton chartRef={sourceRef} title="Emissions By Source" />
+            <PrintButton chartRef={sourceRef} title="Emissions By Source" getData={() => ({
+              summary: `Top emission sources ranked by total tCO2e.`,
+              headers: ["Source", "Scope", "Emissions (tCO2e)"],
+              rows: bySource.slice(0, 8).map((s) => [s.sourceName, `Scope ${s.scope}`, s.total.toFixed(2)]),
+            })} />
           </div>
           {bySource.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
@@ -237,7 +249,15 @@ export default function DashboardPage() {
               <h3 className="text-base font-semibold text-gray-900">Scope Breakdown</h3>
               <span className="text-sm text-gray-400">tCO2e by scope</span>
             </div>
-            <PrintButton chartRef={breakdownRef} title="Scope Breakdown" />
+            <PrintButton chartRef={breakdownRef} title="Scope Breakdown" getData={() => ({
+              summary: `Scope breakdown summary. Total: ${formatNumber(total)} tCO2e.`,
+              headers: ["Scope", "Description", "Emissions (tCO2e)", "Percentage"],
+              rows: [
+                ["Scope 1", "Fleet fuel, LPG, refrigerants", (stats?.scope1 ?? 0).toFixed(2), total > 0 ? `${(((stats?.scope1 ?? 0) / total) * 100).toFixed(1)}%` : "0%"],
+                ["Scope 2", "Purchased electricity, steam", (stats?.scope2 ?? 0).toFixed(2), total > 0 ? `${(((stats?.scope2 ?? 0) / total) * 100).toFixed(1)}%` : "0%"],
+                ["Scope 3", "Travel, waste, water, logistics", (stats?.scope3 ?? 0).toFixed(2), total > 0 ? `${(((stats?.scope3 ?? 0) / total) * 100).toFixed(1)}%` : "0%"],
+              ],
+            })} />
           </div>
           <div className="space-y-4">
             {[
