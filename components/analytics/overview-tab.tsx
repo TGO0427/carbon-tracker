@@ -31,7 +31,7 @@ export function OverviewTab() {
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <KpiCard
           title="Total Emissions"
-          value={`${formatNumber(total)} t`}
+          value={`${formatNumber(total)} tCO2e`}
           subtitle="tCO2e"
           icon={<Activity className="h-5 w-5" />}
           iconColor="text-emerald-600"
@@ -39,7 +39,7 @@ export function OverviewTab() {
         />
         <KpiCard
           title="Scope 1"
-          value={`${formatNumber(stats?.scope1 ?? 0)} t`}
+          value={`${formatNumber(stats?.scope1 ?? 0)} tCO2e`}
           subtitle="Direct"
           icon={<Flame className="h-5 w-5" />}
           iconColor="text-green-800"
@@ -47,7 +47,7 @@ export function OverviewTab() {
         />
         <KpiCard
           title="Scope 2"
-          value={`${formatNumber(stats?.scope2 ?? 0)} t`}
+          value={`${formatNumber(stats?.scope2 ?? 0)} tCO2e`}
           subtitle="Energy"
           icon={<Zap className="h-5 w-5" />}
           iconColor="text-green-600"
@@ -55,7 +55,7 @@ export function OverviewTab() {
         />
         <KpiCard
           title="Scope 3"
-          value={`${formatNumber(stats?.scope3 ?? 0)} t`}
+          value={`${formatNumber(stats?.scope3 ?? 0)} tCO2e`}
           subtitle="Indirect"
           icon={<Globe className="h-5 w-5" />}
           iconColor="text-emerald-500"

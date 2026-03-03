@@ -67,7 +67,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
         <KpiCard
           title="Total Emissions"
-          value={`${formatNumber(total)} t`}
+          value={`${formatNumber(total)} tCO2e`}
           subtitle="tCO2e this period"
           icon={<Activity className="h-5 w-5" />}
           iconColor="text-emerald-600"
@@ -76,7 +76,7 @@ export default function DashboardPage() {
         />
         <KpiCard
           title="Scope 1"
-          value={`${formatNumber(stats?.scope1 ?? 0)} t`}
+          value={`${formatNumber(stats?.scope1 ?? 0)} tCO2e`}
           subtitle="Direct emissions"
           icon={<Flame className="h-5 w-5" />}
           iconColor="text-green-800"
@@ -85,7 +85,7 @@ export default function DashboardPage() {
         />
         <KpiCard
           title="Scope 2"
-          value={`${formatNumber(stats?.scope2 ?? 0)} t`}
+          value={`${formatNumber(stats?.scope2 ?? 0)} tCO2e`}
           subtitle="Purchased energy"
           icon={<Zap className="h-5 w-5" />}
           iconColor="text-green-600"
@@ -94,7 +94,7 @@ export default function DashboardPage() {
         />
         <KpiCard
           title="Scope 3"
-          value={`${formatNumber(stats?.scope3 ?? 0)} t`}
+          value={`${formatNumber(stats?.scope3 ?? 0)} tCO2e`}
           subtitle="Indirect emissions"
           icon={<Globe className="h-5 w-5" />}
           iconColor="text-emerald-500"
@@ -112,7 +112,7 @@ export default function DashboardPage() {
         />
         <KpiCard
           title="Intensity"
-          value={total > 0 ? `${formatNumber(total / 12)}/mo` : "0.00/mo"}
+          value={total > 0 ? `${formatNumber(total / 12)} tCO2e/mo` : "0.00 tCO2e/mo"}
           subtitle="Avg monthly"
           icon={<Droplets className="h-5 w-5" />}
           iconColor="text-teal-600"
