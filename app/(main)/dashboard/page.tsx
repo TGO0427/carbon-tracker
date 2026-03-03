@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { Button } from "@/components/ui/button";
 import {
   Flame, Zap, Globe, Activity, Truck, Droplets,
-  Plus, Eye,
+  Plus, Eye, Printer,
 } from "lucide-react";
 import type { DashboardStats, ScopeBreakdown, SourceBreakdown, TrendDataPoint } from "@/types";
 import {
@@ -16,14 +16,53 @@ import {
 import type { PieLabelRenderProps } from "recharts";
 import { SCOPE_CHART_COLORS } from "@/lib/constants";
 import { formatNumber } from "@/lib/utils";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
-const DONUT_COLORS = ["#ef4444", "#f59e0b", "#3b82f6", "#10b981", "#8b5cf6", "#ec4899"];
+const SOURCE_BAR_COLORS = ["#166534", "#15803d", "#16a34a", "#22c55e", "#4ade80", "#86efac", "#bbf7d0", "#dcfce7"];
+
+async function printChartToPdf(element: HTMLElement | null, title: string) {
+  if (!element) return;
+  const canvas = await html2canvas(element, { scale: 2, backgroundColor: "#ffffff" });
+  const imgData = canvas.toDataURL("image/png");
+  const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  const imgWidth = pageWidth - 20;
+  const imgHeight = (canvas.height / canvas.width) * imgWidth;
+  pdf.setFontSize(16);
+  pdf.text(title, 10, 15);
+  pdf.setFontSize(9);
+  pdf.setTextColor(150);
+  pdf.text(`Generated ${new Date().toLocaleDateString()}`, 10, 21);
+  const yOffset = 28;
+  const finalHeight = Math.min(imgHeight, pageHeight - yOffset - 10);
+  pdf.addImage(imgData, "PNG", 10, yOffset, imgWidth, finalHeight);
+  pdf.save(`${title.toLowerCase().replace(/\s+/g, "-")}.pdf`);
+}
+
+function PrintButton({ chartRef, title }: { chartRef: React.RefObject<HTMLElement | null>; title: string }) {
+  return (
+    <button
+      onClick={() => printChartToPdf(chartRef.current, title)}
+      className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors print:hidden"
+      title={`Export ${title} to PDF`}
+    >
+      <Printer className="h-4 w-4" />
+    </button>
+  );
+}
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [byScope, setByScope] = useState<ScopeBreakdown[]>([]);
   const [bySource, setBySource] = useState<SourceBreakdown[]>([]);
   const [trend, setTrend] = useState<TrendDataPoint[]>([]);
+
+  const trendRef = useRef<HTMLDivElement>(null);
+  const donutRef = useRef<HTMLDivElement>(null);
+  const sourceRef = useRef<HTMLDivElement>(null);
+  const breakdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch("/api/dashboard/stats").then((r) => r.json()).then(setStats).catch(() => {});
@@ -71,50 +110,53 @@ export default function DashboardPage() {
           value={`${formatNumber(stats?.scope1 ?? 0)} t`}
           subtitle="Direct emissions"
           icon={<Flame className="h-5 w-5" />}
-          iconColor="text-red-500"
-          iconBgColor="bg-red-50"
+          iconColor="text-green-800"
+          iconBgColor="bg-green-100"
         />
         <KpiCard
           title="Scope 2"
           value={`${formatNumber(stats?.scope2 ?? 0)} t`}
           subtitle="Purchased energy"
           icon={<Zap className="h-5 w-5" />}
-          iconColor="text-amber-500"
-          iconBgColor="bg-amber-50"
+          iconColor="text-green-600"
+          iconBgColor="bg-green-50"
         />
         <KpiCard
           title="Scope 3"
           value={`${formatNumber(stats?.scope3 ?? 0)} t`}
           subtitle="Indirect emissions"
           icon={<Globe className="h-5 w-5" />}
-          iconColor="text-blue-500"
-          iconBgColor="bg-blue-50"
+          iconColor="text-emerald-500"
+          iconBgColor="bg-emerald-50"
         />
         <KpiCard
           title="Logistics"
           value={`${stats?.entryCount ?? 0}`}
           subtitle="Total entries"
           icon={<Truck className="h-5 w-5" />}
-          iconColor="text-purple-500"
-          iconBgColor="bg-purple-50"
+          iconColor="text-green-700"
+          iconBgColor="bg-green-50"
         />
         <KpiCard
           title="Intensity"
           value={total > 0 ? `${formatNumber(total / 12)}/mo` : "0.00/mo"}
           subtitle="Avg monthly"
           icon={<Droplets className="h-5 w-5" />}
-          iconColor="text-cyan-500"
-          iconBgColor="bg-cyan-50"
+          iconColor="text-teal-600"
+          iconBgColor="bg-teal-50"
         />
       </div>
 
       {/* Charts Row 1: Trend + Scope Donut */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
         {/* Monthly Trend - wider */}
-        <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm lg:col-span-3">
-          <div className="mb-4 flex items-baseline gap-2">
-            <h3 className="text-base font-semibold text-gray-900">Monthly Trend</h3>
-            <span className="text-sm text-gray-400">Emissions by scope</span>
+        <div ref={trendRef} className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm lg:col-span-3">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-baseline gap-2">
+              <h3 className="text-base font-semibold text-gray-900">Monthly Trend</h3>
+              <span className="text-sm text-gray-400">Emissions by scope</span>
+            </div>
+            <PrintButton chartRef={trendRef} title="Monthly Trend" />
           </div>
           {trend.length > 0 ? (
             <ResponsiveContainer width="100%" height={280}>
@@ -140,10 +182,13 @@ export default function DashboardPage() {
         </div>
 
         {/* Scope Distribution - Donut */}
-        <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm lg:col-span-2">
-          <div className="mb-4 flex items-baseline gap-2">
-            <h3 className="text-base font-semibold text-gray-900">Scope Distribution</h3>
-            <span className="text-sm text-gray-400">By scope</span>
+        <div ref={donutRef} className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm lg:col-span-2">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-baseline gap-2">
+              <h3 className="text-base font-semibold text-gray-900">Scope Distribution</h3>
+              <span className="text-sm text-gray-400">By scope</span>
+            </div>
+            <PrintButton chartRef={donutRef} title="Scope Distribution" />
           </div>
           {byScope.length > 0 && byScope.some((s) => s.total > 0) ? (
             <ResponsiveContainer width="100%" height={280}>
@@ -184,11 +229,14 @@ export default function DashboardPage() {
 
       {/* Charts Row 2: By Source + Top Emitters */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Emissions by Source - Line/Area style */}
-        <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
-          <div className="mb-4 flex items-baseline gap-2">
-            <h3 className="text-base font-semibold text-gray-900">By Source</h3>
-            <span className="text-sm text-gray-400">Emission breakdown</span>
+        {/* Emissions by Source */}
+        <div ref={sourceRef} className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-baseline gap-2">
+              <h3 className="text-base font-semibold text-gray-900">By Source</h3>
+              <span className="text-sm text-gray-400">Emission breakdown</span>
+            </div>
+            <PrintButton chartRef={sourceRef} title="Emissions By Source" />
           </div>
           {bySource.length > 0 ? (
             <div className="space-y-3">
@@ -204,7 +252,7 @@ export default function DashboardPage() {
                           className="h-2.5 rounded-full transition-all"
                           style={{
                             width: `${Math.max(pct, 2)}%`,
-                            backgroundColor: DONUT_COLORS[i % DONUT_COLORS.length],
+                            backgroundColor: SOURCE_BAR_COLORS[i % SOURCE_BAR_COLORS.length],
                           }}
                         />
                       </div>
@@ -224,16 +272,19 @@ export default function DashboardPage() {
         </div>
 
         {/* Top Emitters by Scope (summary card) */}
-        <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
-          <div className="mb-4 flex items-baseline gap-2">
-            <h3 className="text-base font-semibold text-gray-900">Scope Breakdown</h3>
-            <span className="text-sm text-gray-400">tCO2e by scope</span>
+        <div ref={breakdownRef} className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-baseline gap-2">
+              <h3 className="text-base font-semibold text-gray-900">Scope Breakdown</h3>
+              <span className="text-sm text-gray-400">tCO2e by scope</span>
+            </div>
+            <PrintButton chartRef={breakdownRef} title="Scope Breakdown" />
           </div>
           <div className="space-y-4">
             {[
-              { scope: 1, label: "Scope 1 - Direct", value: stats?.scope1 ?? 0, color: "#ef4444", desc: "Fleet fuel, LPG, refrigerants" },
-              { scope: 2, label: "Scope 2 - Energy", value: stats?.scope2 ?? 0, color: "#f59e0b", desc: "Purchased electricity, steam" },
-              { scope: 3, label: "Scope 3 - Indirect", value: stats?.scope3 ?? 0, color: "#3b82f6", desc: "Travel, waste, water, logistics" },
+              { scope: 1, label: "Scope 1 - Direct", value: stats?.scope1 ?? 0, color: "#166534", desc: "Fleet fuel, LPG, refrigerants" },
+              { scope: 2, label: "Scope 2 - Energy", value: stats?.scope2 ?? 0, color: "#22c55e", desc: "Purchased electricity, steam" },
+              { scope: 3, label: "Scope 3 - Indirect", value: stats?.scope3 ?? 0, color: "#86efac", desc: "Travel, waste, water, logistics" },
             ].map((item) => (
               <div key={item.scope} className="rounded-lg border border-gray-50 bg-gray-50/50 p-4">
                 <div className="flex items-center justify-between">

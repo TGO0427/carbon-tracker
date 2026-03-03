@@ -1,28 +1,28 @@
 export const SCOPES: Record<number, { label: string; color: string; bgColor: string; description: string }> = {
   1: {
     label: "Scope 1",
-    color: "text-red-700",
-    bgColor: "bg-red-100",
+    color: "text-green-900",
+    bgColor: "bg-green-100",
     description: "Direct emissions from owned/controlled sources",
   },
   2: {
     label: "Scope 2",
-    color: "text-amber-700",
-    bgColor: "bg-amber-100",
+    color: "text-green-700",
+    bgColor: "bg-green-50",
     description: "Indirect emissions from purchased energy",
   },
   3: {
     label: "Scope 3",
-    color: "text-blue-700",
-    bgColor: "bg-blue-100",
+    color: "text-emerald-600",
+    bgColor: "bg-emerald-50",
     description: "All other indirect emissions in the value chain",
   },
 };
 
 export const SCOPE_CHART_COLORS: Record<number, string> = {
-  1: "#ef4444",
-  2: "#f59e0b",
-  3: "#3b82f6",
+  1: "#166534",
+  2: "#22c55e",
+  3: "#86efac",
 };
 
 export const EMISSION_SOURCES = [
