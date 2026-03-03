@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -12,10 +13,11 @@ import { Plus, Flame, Trash2, Pencil } from "lucide-react";
 import { formatNumber } from "@/lib/utils";
 import type { EmissionEntry } from "@/types";
 
-export default function EmissionsPage() {
+function EmissionsContent() {
+  const searchParams = useSearchParams();
   const [emissions, setEmissions] = useState<EmissionEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [scopeFilter, setScopeFilter] = useState("");
+  const [scopeFilter, setScopeFilter] = useState(searchParams.get("scope") ?? "");
 
   const fetchEmissions = () => {
     setLoading(true);
@@ -125,5 +127,13 @@ export default function EmissionsPage() {
         </Card>
       )}
     </div>
+  );
+}
+
+export default function EmissionsPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center py-12"><Spinner /></div>}>
+      <EmissionsContent />
+    </Suspense>
   );
 }

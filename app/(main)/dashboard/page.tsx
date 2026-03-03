@@ -72,6 +72,7 @@ export default function DashboardPage() {
           icon={<Activity className="h-5 w-5" />}
           iconColor="text-emerald-600"
           iconBgColor="bg-emerald-50"
+          href="/analytics"
         />
         <KpiCard
           title="Scope 1"
@@ -80,6 +81,7 @@ export default function DashboardPage() {
           icon={<Flame className="h-5 w-5" />}
           iconColor="text-green-800"
           iconBgColor="bg-green-100"
+          href="/emissions?scope=1"
         />
         <KpiCard
           title="Scope 2"
@@ -88,6 +90,7 @@ export default function DashboardPage() {
           icon={<Zap className="h-5 w-5" />}
           iconColor="text-green-600"
           iconBgColor="bg-green-50"
+          href="/emissions?scope=2"
         />
         <KpiCard
           title="Scope 3"
@@ -96,6 +99,7 @@ export default function DashboardPage() {
           icon={<Globe className="h-5 w-5" />}
           iconColor="text-emerald-500"
           iconBgColor="bg-emerald-50"
+          href="/emissions?scope=3"
         />
         <KpiCard
           title="Logistics"
@@ -104,6 +108,7 @@ export default function DashboardPage() {
           icon={<Truck className="h-5 w-5" />}
           iconColor="text-green-700"
           iconBgColor="bg-green-50"
+          href="/logistics"
         />
         <KpiCard
           title="Intensity"
@@ -112,6 +117,7 @@ export default function DashboardPage() {
           icon={<Droplets className="h-5 w-5" />}
           iconColor="text-teal-600"
           iconBgColor="bg-teal-50"
+          href="/analytics"
         />
       </div>
 
