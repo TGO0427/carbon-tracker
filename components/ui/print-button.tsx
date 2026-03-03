@@ -2,7 +2,7 @@
 
 import { Printer } from "lucide-react";
 import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
+import html2canvas from "html2canvas-pro";
 
 export async function printChartToPdf(element: HTMLElement | null, title: string) {
   if (!element) return;
