@@ -6,58 +6,25 @@ import { KpiCard } from "@/components/ui/kpi-card";
 import { Button } from "@/components/ui/button";
 import {
   Flame, Zap, Globe, Activity, Truck, Droplets,
-  Plus, Eye, Printer,
+  Plus, Eye,
 } from "lucide-react";
 import type { DashboardStats, ScopeBreakdown, SourceBreakdown, TrendDataPoint } from "@/types";
 import {
-  PieChart, Pie, Cell, LineChart, Line,
+  PieChart, Pie, Cell, LineChart, Line, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
 import type { PieLabelRenderProps } from "recharts";
-import { SCOPE_CHART_COLORS } from "@/lib/constants";
+import { SCOPE_CHART_COLORS, ACTIVITY_BAR_COLORS } from "@/lib/constants";
 import { formatNumber } from "@/lib/utils";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
-
-const SOURCE_BAR_COLORS = ["#166534", "#15803d", "#16a34a", "#22c55e", "#4ade80", "#86efac", "#bbf7d0", "#dcfce7"];
-
-async function printChartToPdf(element: HTMLElement | null, title: string) {
-  if (!element) return;
-  const canvas = await html2canvas(element, { scale: 2, backgroundColor: "#ffffff" });
-  const imgData = canvas.toDataURL("image/png");
-  const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-  const pageWidth = pdf.internal.pageSize.getWidth();
-  const pageHeight = pdf.internal.pageSize.getHeight();
-  const imgWidth = pageWidth - 20;
-  const imgHeight = (canvas.height / canvas.width) * imgWidth;
-  pdf.setFontSize(16);
-  pdf.text(title, 10, 15);
-  pdf.setFontSize(9);
-  pdf.setTextColor(150);
-  pdf.text(`Generated ${new Date().toLocaleDateString()}`, 10, 21);
-  const yOffset = 28;
-  const finalHeight = Math.min(imgHeight, pageHeight - yOffset - 10);
-  pdf.addImage(imgData, "PNG", 10, yOffset, imgWidth, finalHeight);
-  pdf.save(`${title.toLowerCase().replace(/\s+/g, "-")}.pdf`);
-}
-
-function PrintButton({ chartRef, title }: { chartRef: React.RefObject<HTMLElement | null>; title: string }) {
-  return (
-    <button
-      onClick={() => printChartToPdf(chartRef.current, title)}
-      className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors print:hidden"
-      title={`Export ${title} to PDF`}
-    >
-      <Printer className="h-4 w-4" />
-    </button>
-  );
-}
+import { PrintButton } from "@/components/ui/print-button";
+import { useDateFilter } from "@/lib/date-filter-context";
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [byScope, setByScope] = useState<ScopeBreakdown[]>([]);
   const [bySource, setBySource] = useState<SourceBreakdown[]>([]);
   const [trend, setTrend] = useState<TrendDataPoint[]>([]);
+  const { buildQuery } = useDateFilter();
 
   const trendRef = useRef<HTMLDivElement>(null);
   const donutRef = useRef<HTMLDivElement>(null);
@@ -65,11 +32,12 @@ export default function DashboardPage() {
   const breakdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetch("/api/dashboard/stats").then((r) => r.json()).then(setStats).catch(() => {});
-    fetch("/api/dashboard/by-scope").then((r) => r.json()).then(setByScope).catch(() => {});
-    fetch("/api/dashboard/by-source").then((r) => r.json()).then(setBySource).catch(() => {});
-    fetch("/api/dashboard/trend").then((r) => r.json()).then(setTrend).catch(() => {});
-  }, []);
+    const q = buildQuery();
+    fetch(`/api/dashboard/stats?${q}`).then((r) => r.json()).then(setStats).catch(() => {});
+    fetch(`/api/dashboard/by-scope?${q}`).then((r) => r.json()).then(setByScope).catch(() => {});
+    fetch(`/api/dashboard/by-source?${q}`).then((r) => r.json()).then(setBySource).catch(() => {});
+    fetch(`/api/dashboard/trend?${q}`).then((r) => r.json()).then(setTrend).catch(() => {});
+  }, [buildQuery]);
 
   const total = stats?.total ?? 0;
 
@@ -149,7 +117,7 @@ export default function DashboardPage() {
 
       {/* Charts Row 1: Trend + Scope Donut */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-        {/* Monthly Trend - wider */}
+        {/* Monthly Trend */}
         <div ref={trendRef} className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm lg:col-span-3">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-baseline gap-2">
@@ -227,51 +195,42 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Charts Row 2: By Source + Top Emitters */}
+      {/* Charts Row 2: By Source (vertical bar) + Scope Breakdown */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Emissions by Source */}
+        {/* Emissions by Source - Vertical Bar Chart */}
         <div ref={sourceRef} className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-baseline gap-2">
               <h3 className="text-base font-semibold text-gray-900">By Source</h3>
-              <span className="text-sm text-gray-400">Emission breakdown</span>
+              <span className="text-sm text-gray-400">Total emissions by activity</span>
             </div>
             <PrintButton chartRef={sourceRef} title="Emissions By Source" />
           </div>
           {bySource.length > 0 ? (
-            <div className="space-y-3">
-              {bySource.slice(0, 8).map((source, i) => {
-                const maxVal = bySource[0]?.total ?? 1;
-                const pct = maxVal > 0 ? (source.total / maxVal) * 100 : 0;
-                return (
-                  <div key={source.sourceName} className="flex items-center gap-3">
-                    <span className="w-40 truncate text-sm text-gray-700">{source.sourceName}</span>
-                    <div className="flex-1">
-                      <div className="h-2.5 w-full rounded-full bg-gray-100">
-                        <div
-                          className="h-2.5 rounded-full transition-all"
-                          style={{
-                            width: `${Math.max(pct, 2)}%`,
-                            backgroundColor: SOURCE_BAR_COLORS[i % SOURCE_BAR_COLORS.length],
-                          }}
-                        />
-                      </div>
-                    </div>
-                    <span className="w-20 text-right text-sm font-semibold text-gray-900">
-                      {formatNumber(source.total, 2)}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={bySource.slice(0, 8)}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="sourceName" tick={{ fontSize: 10, fill: "#6b7280" }} angle={-25} textAnchor="end" height={60} />
+                <YAxis tick={{ fontSize: 12, fill: "#9ca3af" }} />
+                <Tooltip
+                  contentStyle={{ borderRadius: 8, border: "1px solid #e5e7eb" }}
+                  formatter={(value) => `${Number(value).toFixed(2)} tCO2e`}
+                />
+                <Bar dataKey="total" radius={[4, 4, 0, 0]}>
+                  {bySource.slice(0, 8).map((_entry, i) => (
+                    <Cell key={i} fill={ACTIVITY_BAR_COLORS[i % ACTIVITY_BAR_COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           ) : (
-            <div className="flex h-40 items-center justify-center text-sm text-gray-400">
+            <div className="flex h-[300px] items-center justify-center text-sm text-gray-400">
               No emission sources yet.
             </div>
           )}
         </div>
 
-        {/* Top Emitters by Scope (summary card) */}
+        {/* Scope Breakdown */}
         <div ref={breakdownRef} className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-baseline gap-2">

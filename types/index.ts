@@ -103,3 +103,27 @@ export interface TrendDataPoint {
   scope3: number;
   total: number;
 }
+
+export interface SupplierEmissions {
+  supplierId: string;
+  supplierName: string;
+  supplierType: string;
+  totalEmissions: number;
+  shipmentCount: number;
+}
+
+export interface YearlyDataPoint {
+  year: number;
+  scope1: number;
+  scope2: number;
+  scope3: number;
+  total: number;
+}
+
+export interface CategoryBreakdown {
+  category: string;
+  scope: number;
+  total: number;
+}
+
+export type AnalyticsTab = "overview" | "by-category" | "by-scope" | "sector-comparison" | "year-over-year";

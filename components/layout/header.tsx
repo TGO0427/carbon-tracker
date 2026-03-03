@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Search, Bell, Home, ChevronRight } from "lucide-react";
-import type { ReportingPeriod } from "@/types";
+import { Search, Bell, Home, ChevronRight, Calendar } from "lucide-react";
+import { useDateFilter } from "@/lib/date-filter-context";
+import { MONTHS } from "@/lib/constants";
 
 const pageTitles: Record<string, string> = {
   "/dashboard": "Dashboard",
@@ -17,23 +17,16 @@ const pageTitles: Record<string, string> = {
   "/reports": "Reports",
   "/settings": "Settings",
   "/settings/emission-factors": "Emission Factors",
+  "/analytics": "Analytics",
 };
 
 export function Header() {
   const pathname = usePathname();
-  const [periods, setPeriods] = useState<ReportingPeriod[]>([]);
-  const [activePeriodId, setActivePeriodId] = useState<string>("");
+  const { selectedYear, selectedMonth } = useDateFilter();
 
-  useEffect(() => {
-    fetch("/api/reporting-periods")
-      .then((res) => res.json())
-      .then((data: ReportingPeriod[]) => {
-        setPeriods(data);
-        const active = data.find((p) => p.isActive);
-        if (active) setActivePeriodId(active.id);
-      })
-      .catch(() => {});
-  }, []);
+  const monthLabel = selectedMonth
+    ? MONTHS.find((m) => m.value === selectedMonth)?.label
+    : "All Months";
 
   // Build breadcrumbs
   const segments = pathname.split("/").filter(Boolean);
@@ -41,8 +34,6 @@ export function Header() {
     const path = "/" + segments.slice(0, i + 1).join("/");
     return { label: pageTitles[path] || segments[i], path };
   });
-
-  const currentTitle = pageTitles[pathname] || segments[segments.length - 1] || "Dashboard";
 
   return (
     <header className="flex h-14 items-center justify-between border-b border-gray-200 bg-white px-6">
@@ -68,18 +59,10 @@ export function Header() {
           <kbd className="ml-2 rounded bg-gray-200 px-1.5 py-0.5 text-[10px] font-medium text-gray-500">&#8984;K</kbd>
         </button>
 
-        {/* Period Selector */}
-        <div className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-1.5">
-          <span className="text-xs text-gray-400">Period</span>
-          <select
-            value={activePeriodId}
-            onChange={(e) => setActivePeriodId(e.target.value)}
-            className="border-none bg-transparent text-sm font-medium text-gray-700 focus:outline-none"
-          >
-            {periods.map((p) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
+        {/* Date Context Badge */}
+        <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5">
+          <Calendar className="h-4 w-4 text-emerald-600" />
+          <span className="text-sm font-medium text-emerald-700">{monthLabel} {selectedYear}</span>
         </div>
 
         {/* Notifications */}

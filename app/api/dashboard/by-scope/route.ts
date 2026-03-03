@@ -1,14 +1,13 @@
 import { prisma } from "@/lib/db";
+import { buildDateFilter } from "@/lib/api-date-filter";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
-  const periodId = request.nextUrl.searchParams.get("periodId");
-  const where = periodId ? { reportingPeriodId: periodId } : {};
+  const emissionWhere = buildDateFilter(request, "entryDate");
+  const shipmentWhere = buildDateFilter(request, "shipmentDate");
 
-  const emissions = await prisma.emissionEntry.findMany({ where });
-  const shipments = await prisma.shipment.findMany({
-    where: periodId ? { reportingPeriodId: periodId } : {},
-  });
+  const emissions = await prisma.emissionEntry.findMany({ where: emissionWhere });
+  const shipments = await prisma.shipment.findMany({ where: shipmentWhere });
 
   const scope1 = emissions.filter((e) => e.scope === 1).reduce((s, e) => s + e.totalEmissions, 0);
   const scope2 = emissions.filter((e) => e.scope === 2).reduce((s, e) => s + e.totalEmissions, 0);

@@ -1,10 +1,9 @@
 import { prisma } from "@/lib/db";
+import { buildDateFilter } from "@/lib/api-date-filter";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
-  const periodId = request.nextUrl.searchParams.get("periodId");
-  const where = periodId ? { reportingPeriodId: periodId } : {};
-
+  const where = buildDateFilter(request, "entryDate");
   const emissions = await prisma.emissionEntry.findMany({ where });
 
   const bySource: Record<string, { sourceName: string; scope: number; total: number }> = {};
