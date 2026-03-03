@@ -1,0 +1,113 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model ReportingPeriod {
+  id        String   @id @default(cuid())
+  name      String
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  emissions EmissionEntry[]
+  shipments Shipment[]
+}
+
+model EmissionFactor {
+  id       String @id @default(cuid())
+  name     String
+  category String
+  scope    Int
+  factor   Float
+  unit     String
+  source   String @default("UK DEFRA")
+  year     Int    @default(2024)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  emissionEntries EmissionEntry[]
+}
+
+model EmissionEntry {
+  id             String   @id @default(cuid())
+  scope          Int
+  sourceName     String
+  sourceCategory String
+  activityData   Float
+  activityUnit   String
+  customFactor   Float?
+  totalEmissions Float
+  notes          String?
+  entryDate      DateTime @default(now())
+
+  emissionFactorId  String?
+  emissionFactor    EmissionFactor? @relation(fields: [emissionFactorId], references: [id])
+  reportingPeriodId String?
+  reportingPeriod   ReportingPeriod? @relation(fields: [reportingPeriodId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Supplier {
+  id           String  @id @default(cuid())
+  name         String
+  type         String
+  country      String?
+  city         String?
+  address      String?
+  contactName  String?
+  contactEmail String?
+  notes        String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  shipments Shipment[]
+}
+
+model Shipment {
+  id                 String   @id @default(cuid())
+  reference          String?
+  direction          String
+  productDescription String?
+  totalWeightTonnes  Float
+  totalEmissions     Float    @default(0)
+  notes              String?
+  shipmentDate       DateTime @default(now())
+
+  supplierId        String?
+  supplier          Supplier? @relation(fields: [supplierId], references: [id])
+  reportingPeriodId String?
+  reportingPeriod   ReportingPeriod? @relation(fields: [reportingPeriodId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  legs TransportLeg[]
+}
+
+model TransportLeg {
+  id             String  @id @default(cuid())
+  legOrder       Int
+  mode           String
+  origin         String?
+  destination    String?
+  distanceKm     Float
+  emissionFactor Float
+  emissions      Float
+  notes          String?
+
+  shipmentId String
+  shipment   Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
