@@ -230,24 +230,27 @@ async function main() {
   });
 
   // --- SCOPE 2: Purchased Electricity split per unit ---
-  // Facility totals: Impilo 25%, Sizwe 25%, ISO Foods 20%, Allmark PTA 15%, Allmark Klap 15%
+  // Facility totals: Impilo 23%, Sizwe 23%, ISO Foods 18%, Allmark PTA 13%, AFI 8%, Allmark Klap 15%
   // Then split within each facility across individual units
   const elecMonthly = [380000, 365000, 370000, 355000, 362000, 340000, 385000, 395493, 370000];
   const elecUnits = [
-    // Impilo: 25% total → Unit 1 (40%), Unit 2 (35%), Unit 10 (25%)
-    { label: "Impilo Unit 1", siteId: "site-pretoria", unitId: "unit-impilo-1", pct: 0.25 * 0.40 },
-    { label: "Impilo Unit 2", siteId: "site-pretoria", unitId: "unit-impilo-2", pct: 0.25 * 0.35 },
-    { label: "Impilo Unit 10", siteId: "site-pretoria", unitId: "unit-impilo-10", pct: 0.25 * 0.25 },
-    // Sizwe: 25% total → Unit 6 (40%), Unit 7 (35%), Unit 8 (25%)
-    { label: "Sizwe Unit 6", siteId: "site-pretoria", unitId: "unit-sizwe-6", pct: 0.25 * 0.40 },
-    { label: "Sizwe Unit 7", siteId: "site-pretoria", unitId: "unit-sizwe-7", pct: 0.25 * 0.35 },
-    { label: "Sizwe Unit 8", siteId: "site-pretoria", unitId: "unit-sizwe-8", pct: 0.25 * 0.25 },
-    // ISO Foods: 20% total → Unit 3 (55%), Unit 4 (45%)
-    { label: "ISO Foods Unit 3", siteId: "site-pretoria", unitId: "unit-iso-foods-3", pct: 0.20 * 0.55 },
-    { label: "ISO Foods Unit 4", siteId: "site-pretoria", unitId: "unit-iso-foods-4", pct: 0.20 * 0.45 },
-    // Allmark P5 & P6 (Pretoria): 15% total → P5 (60%), P6 (40%)
-    { label: "Allmark P5", siteId: "site-pretoria", unitId: "unit-allmark-p5", pct: 0.15 * 0.60 },
-    { label: "Allmark P6", siteId: "site-pretoria", unitId: "unit-allmark-p6", pct: 0.15 * 0.40 },
+    // Impilo: 23% total → Unit 1 (40%), Unit 2 (35%), Unit 10 (25%)
+    { label: "Impilo Unit 1", siteId: "site-pretoria", unitId: "unit-impilo-1", pct: 0.23 * 0.40 },
+    { label: "Impilo Unit 2", siteId: "site-pretoria", unitId: "unit-impilo-2", pct: 0.23 * 0.35 },
+    { label: "Impilo Unit 10", siteId: "site-pretoria", unitId: "unit-impilo-10", pct: 0.23 * 0.25 },
+    // Sizwe: 23% total → Unit 6 (40%), Unit 7 (35%), Unit 8 (25%)
+    { label: "Sizwe Unit 6", siteId: "site-pretoria", unitId: "unit-sizwe-6", pct: 0.23 * 0.40 },
+    { label: "Sizwe Unit 7", siteId: "site-pretoria", unitId: "unit-sizwe-7", pct: 0.23 * 0.35 },
+    { label: "Sizwe Unit 8", siteId: "site-pretoria", unitId: "unit-sizwe-8", pct: 0.23 * 0.25 },
+    // ISO Foods: 18% total → Unit 3 (55%), Unit 4 (45%)
+    { label: "ISO Foods Unit 3", siteId: "site-pretoria", unitId: "unit-iso-foods-3", pct: 0.18 * 0.55 },
+    { label: "ISO Foods Unit 4", siteId: "site-pretoria", unitId: "unit-iso-foods-4", pct: 0.18 * 0.45 },
+    // Allmark P5 & P6 (Pretoria): 13% total → P5 (60%), P6 (40%)
+    { label: "Allmark P5", siteId: "site-pretoria", unitId: "unit-allmark-p5", pct: 0.13 * 0.60 },
+    { label: "Allmark P6", siteId: "site-pretoria", unitId: "unit-allmark-p6", pct: 0.13 * 0.40 },
+    // AFI: 8% total → Unit 5 (55%), Unit 9 (45%)
+    { label: "AFI Unit 5", siteId: "site-pretoria", unitId: "unit-afi-5", pct: 0.08 * 0.55 },
+    { label: "AFI Unit 9", siteId: "site-pretoria", unitId: "unit-afi-9", pct: 0.08 * 0.45 },
     // Allmark Klapmuts: 15% total → Groene Weide (60%), K58 (40%)
     { label: "Allmark Groene Weide", siteId: "site-klapmuts", unitId: "unit-allmark-groene-weide", pct: 0.15 * 0.60 },
     { label: "Allmark K58", siteId: "site-klapmuts", unitId: "unit-allmark-k58", pct: 0.15 * 0.40 },
@@ -305,20 +308,23 @@ async function main() {
   // Same facility distribution as electricity, then split within facilities
   const waterMonthly = [1300, 1250, 1200, 1180, 1300, 1100, 1280, 1321, 1300];
   const waterUnits = [
-    // Impilo: 20% → Unit 1 (40%), Unit 2 (35%), Unit 10 (25%)
-    { label: "Impilo Unit 1", siteId: "site-pretoria", unitId: "unit-impilo-1", pct: 0.20 * 0.40 },
-    { label: "Impilo Unit 2", siteId: "site-pretoria", unitId: "unit-impilo-2", pct: 0.20 * 0.35 },
-    { label: "Impilo Unit 10", siteId: "site-pretoria", unitId: "unit-impilo-10", pct: 0.20 * 0.25 },
-    // Sizwe: 20% → Unit 6 (40%), Unit 7 (35%), Unit 8 (25%)
-    { label: "Sizwe Unit 6", siteId: "site-pretoria", unitId: "unit-sizwe-6", pct: 0.20 * 0.40 },
-    { label: "Sizwe Unit 7", siteId: "site-pretoria", unitId: "unit-sizwe-7", pct: 0.20 * 0.35 },
-    { label: "Sizwe Unit 8", siteId: "site-pretoria", unitId: "unit-sizwe-8", pct: 0.20 * 0.25 },
-    // ISO Foods: 18% → Unit 3 (55%), Unit 4 (45%)
-    { label: "ISO Foods Unit 3", siteId: "site-pretoria", unitId: "unit-iso-foods-3", pct: 0.18 * 0.55 },
-    { label: "ISO Foods Unit 4", siteId: "site-pretoria", unitId: "unit-iso-foods-4", pct: 0.18 * 0.45 },
-    // Allmark P5: 15%, Allmark P6: 12%
-    { label: "Allmark P5", siteId: "site-pretoria", unitId: "unit-allmark-p5", pct: 0.15 },
-    { label: "Allmark P6", siteId: "site-pretoria", unitId: "unit-allmark-p6", pct: 0.12 },
+    // Impilo: 18% → Unit 1 (40%), Unit 2 (35%), Unit 10 (25%)
+    { label: "Impilo Unit 1", siteId: "site-pretoria", unitId: "unit-impilo-1", pct: 0.18 * 0.40 },
+    { label: "Impilo Unit 2", siteId: "site-pretoria", unitId: "unit-impilo-2", pct: 0.18 * 0.35 },
+    { label: "Impilo Unit 10", siteId: "site-pretoria", unitId: "unit-impilo-10", pct: 0.18 * 0.25 },
+    // Sizwe: 18% → Unit 6 (40%), Unit 7 (35%), Unit 8 (25%)
+    { label: "Sizwe Unit 6", siteId: "site-pretoria", unitId: "unit-sizwe-6", pct: 0.18 * 0.40 },
+    { label: "Sizwe Unit 7", siteId: "site-pretoria", unitId: "unit-sizwe-7", pct: 0.18 * 0.35 },
+    { label: "Sizwe Unit 8", siteId: "site-pretoria", unitId: "unit-sizwe-8", pct: 0.18 * 0.25 },
+    // ISO Foods: 16% → Unit 3 (55%), Unit 4 (45%)
+    { label: "ISO Foods Unit 3", siteId: "site-pretoria", unitId: "unit-iso-foods-3", pct: 0.16 * 0.55 },
+    { label: "ISO Foods Unit 4", siteId: "site-pretoria", unitId: "unit-iso-foods-4", pct: 0.16 * 0.45 },
+    // Allmark P5 (13%), Allmark P6 (10%)
+    { label: "Allmark P5", siteId: "site-pretoria", unitId: "unit-allmark-p5", pct: 0.13 },
+    { label: "Allmark P6", siteId: "site-pretoria", unitId: "unit-allmark-p6", pct: 0.10 },
+    // AFI: 7% → Unit 5 (55%), Unit 9 (45%)
+    { label: "AFI Unit 5", siteId: "site-pretoria", unitId: "unit-afi-5", pct: 0.07 * 0.55 },
+    { label: "AFI Unit 9", siteId: "site-pretoria", unitId: "unit-afi-9", pct: 0.07 * 0.45 },
     // Allmark Klapmuts: 15% → Groene Weide (60%), K58 (40%)
     { label: "Allmark Groene Weide", siteId: "site-klapmuts", unitId: "unit-allmark-groene-weide", pct: 0.15 * 0.60 },
     { label: "Allmark K58", siteId: "site-klapmuts", unitId: "unit-allmark-k58", pct: 0.15 * 0.40 },
