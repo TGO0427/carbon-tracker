@@ -53,9 +53,8 @@ async function main() {
       name: "Klapmuts",
       location: "Klapmuts, Western Cape",
       units: [
-        { id: "unit-allmark-klap", name: "Allmark", number: null },
-        { id: "unit-groene-weide", name: "Groene Weide", number: null },
-        { id: "unit-k58", name: "K58", number: null },
+        { id: "unit-allmark-groene-weide", name: "Allmark", number: "Groene Weide" },
+        { id: "unit-allmark-k58", name: "Allmark", number: "K58" },
       ],
     },
     {
@@ -249,8 +248,9 @@ async function main() {
     // Allmark P5 & P6 (Pretoria): 15% total → P5 (60%), P6 (40%)
     { label: "Allmark P5", siteId: "site-pretoria", unitId: "unit-allmark-p5", pct: 0.15 * 0.60 },
     { label: "Allmark P6", siteId: "site-pretoria", unitId: "unit-allmark-p6", pct: 0.15 * 0.40 },
-    // Allmark Klapmuts: 15% total
-    { label: "Allmark Klapmuts", siteId: "site-klapmuts", unitId: "unit-allmark-klap", pct: 0.15 },
+    // Allmark Klapmuts: 15% total → Groene Weide (60%), K58 (40%)
+    { label: "Allmark Groene Weide", siteId: "site-klapmuts", unitId: "unit-allmark-groene-weide", pct: 0.15 * 0.60 },
+    { label: "Allmark K58", siteId: "site-klapmuts", unitId: "unit-allmark-k58", pct: 0.15 * 0.40 },
   ];
   for (let i = 0; i < months.length; i++) {
     for (const eu of elecUnits) {
@@ -319,8 +319,9 @@ async function main() {
     // Allmark P5: 15%, Allmark P6: 12%
     { label: "Allmark P5", siteId: "site-pretoria", unitId: "unit-allmark-p5", pct: 0.15 },
     { label: "Allmark P6", siteId: "site-pretoria", unitId: "unit-allmark-p6", pct: 0.12 },
-    // Allmark Klapmuts: 15%
-    { label: "Allmark Klapmuts", siteId: "site-klapmuts", unitId: "unit-allmark-klap", pct: 0.15 },
+    // Allmark Klapmuts: 15% → Groene Weide (60%), K58 (40%)
+    { label: "Allmark Groene Weide", siteId: "site-klapmuts", unitId: "unit-allmark-groene-weide", pct: 0.15 * 0.60 },
+    { label: "Allmark K58", siteId: "site-klapmuts", unitId: "unit-allmark-k58", pct: 0.15 * 0.40 },
   ];
   for (let i = 0; i < months.length; i++) {
     for (const wu of waterUnits) {

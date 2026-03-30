@@ -4,9 +4,8 @@ export const SITES = [
     name: "Klapmuts",
     location: "Klapmuts, Western Cape",
     units: [
-      { id: "unit-allmark-klap", name: "Allmark", number: null },
-      { id: "unit-groene-weide", name: "Groene Weide", number: null },
-      { id: "unit-k58", name: "K58", number: null },
+      { id: "unit-allmark-groene-weide", name: "Allmark", number: "Groene Weide" },
+      { id: "unit-allmark-k58", name: "Allmark", number: "K58" },
     ],
   },
   {
