@@ -118,37 +118,39 @@ export function Sidebar() {
         </div>
       </div>
 
-      {/* Site Filter */}
-      <div className="px-3 pb-3">
-        <div className="rounded-lg bg-white/10 p-3">
-          <p className="mb-2 text-[11px] font-semibold tracking-wider text-white/40">SITE</p>
-          <button
-            onClick={() => setSelectedSiteId(null)}
-            className={cn(
-              "mb-1 w-full rounded px-2 py-1.5 text-left text-xs font-medium transition-colors",
-              selectedSiteId === null
-                ? "bg-emerald-500 text-white"
-                : "text-white/50 hover:bg-white/10 hover:text-white/80"
-            )}
-          >
-            All Sites
-          </button>
-          {SITES.map((site) => (
+      {/* Site Filter - hidden on the Sites page since it has its own drill-down */}
+      {!pathname.startsWith("/sites") && (
+        <div className="px-3 pb-3">
+          <div className="rounded-lg bg-white/10 p-3">
+            <p className="mb-2 text-[11px] font-semibold tracking-wider text-white/40">SITE</p>
             <button
-              key={site.id}
-              onClick={() => setSelectedSiteId(site.id)}
+              onClick={() => setSelectedSiteId(null)}
               className={cn(
-                "w-full rounded px-2 py-1.5 text-left text-xs font-medium transition-colors",
-                selectedSiteId === site.id
+                "mb-1 w-full rounded px-2 py-1.5 text-left text-xs font-medium transition-colors",
+                selectedSiteId === null
                   ? "bg-emerald-500 text-white"
                   : "text-white/50 hover:bg-white/10 hover:text-white/80"
               )}
             >
-              {site.name}
+              All Sites
             </button>
-          ))}
+            {SITES.map((site) => (
+              <button
+                key={site.id}
+                onClick={() => setSelectedSiteId(site.id)}
+                className={cn(
+                  "w-full rounded px-2 py-1.5 text-left text-xs font-medium transition-colors",
+                  selectedSiteId === site.id
+                    ? "bg-emerald-500 text-white"
+                    : "text-white/50 hover:bg-white/10 hover:text-white/80"
+                )}
+              >
+                {site.name}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Quick Actions */}
       <div className="flex gap-1.5 px-3 pb-4">
