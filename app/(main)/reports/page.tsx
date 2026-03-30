@@ -5,7 +5,8 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
-import { Download, FileSpreadsheet } from "lucide-react";
+import { Download, FileSpreadsheet, FileText } from "lucide-react";
+import { useDateFilter } from "@/lib/date-filter-context";
 import type { ReportingPeriod } from "@/types";
 
 export default function ReportsPage() {
@@ -13,6 +14,8 @@ export default function ReportsPage() {
   const [periodId, setPeriodId] = useState("");
   const [scopes, setScopes] = useState([1, 2, 3]);
   const [exporting, setExporting] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const { selectedYear } = useDateFilter();
 
   useEffect(() => {
     fetch("/api/reporting-periods").then((r) => r.json()).then((data: ReportingPeriod[]) => {
@@ -86,6 +89,30 @@ export default function ReportsPage() {
               <FileSpreadsheet className="h-4 w-4" />
               {exporting ? "Generating..." : "Download Excel Report"}
             </Button>
+            <Button
+              variant="outline"
+              disabled={exportingPdf}
+              onClick={async () => {
+                setExportingPdf(true);
+                try {
+                  const res = await fetch(`/api/reports/ghg-pdf?year=${selectedYear}`);
+                  if (res.ok) {
+                    const blob = await res.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `Synercore-GHG-Report-${selectedYear}.pdf`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }
+                } finally {
+                  setExportingPdf(false);
+                }
+              }}
+            >
+              <FileText className="h-4 w-4" />
+              {exportingPdf ? "Generating..." : "Download GHG PDF Report"}
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -96,7 +123,10 @@ export default function ReportsPage() {
           <ul className="space-y-2 text-sm text-gray-600">
             <li className="flex items-center gap-2"><Download className="h-4 w-4 text-emerald-600" /> Summary sheet with emissions by scope and percentages</li>
             <li className="flex items-center gap-2"><Download className="h-4 w-4 text-emerald-600" /> Detailed emissions breakdown by source with activity data and factors</li>
+            <li className="flex items-center gap-2"><Download className="h-4 w-4 text-emerald-600" /> Site breakdown sheet with facility and unit-level emissions</li>
+            <li className="flex items-center gap-2"><Download className="h-4 w-4 text-emerald-600" /> Monthly breakdown by site, facility, and source</li>
             <li className="flex items-center gap-2"><Download className="h-4 w-4 text-emerald-600" /> Logistics sheet with shipment details (if Scope 3 included)</li>
+            <li className="flex items-center gap-2"><Download className="h-4 w-4 text-emerald-600" /> GHG Protocol PDF with executive summary, scope breakdown, methodology</li>
           </ul>
         </CardContent>
       </Card>

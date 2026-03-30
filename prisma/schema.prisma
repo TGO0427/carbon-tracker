@@ -13,10 +13,11 @@ model Site {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  units     Unit[]
-  emissions EmissionEntry[]
-  shipments Shipment[]
-  targets   EmissionTarget[]
+  units       Unit[]
+  emissions   EmissionEntry[]
+  shipments   Shipment[]
+  targets     EmissionTarget[]
+  actionPlans ActionPlan[]
 }
 
 model Unit {
@@ -141,6 +142,40 @@ model EmissionTarget {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  actionPlans ActionPlan[]
+}
+
+model ActionPlan {
+  id             String   @id @default(cuid())
+  title          String
+  description    String?
+  status         String   @default("planned") // planned, in_progress, completed, cancelled
+  expectedReduction Float
+  actualReduction   Float?
+  startDate      DateTime?
+  targetDate     DateTime?
+  completedDate  DateTime?
+  siteId         String?
+  site           Site?    @relation(fields: [siteId], references: [id])
+  targetId       String?
+  target         EmissionTarget? @relation(fields: [targetId], references: [id])
+  notes          String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String   // import, create, update, delete, bulk_delete
+  entity    String   // emission, shipment, target, action_plan
+  entityId  String?
+  details   String?
+  count     Int?
+  userName  String   @default("Admin")
+
+  createdAt DateTime @default(now())
 }
 
 model TransportLeg {

@@ -64,3 +64,18 @@ export async function POST(request: Request) {
 
   return NextResponse.json(entry, { status: 201 });
 }
+
+export async function DELETE(request: Request) {
+  const body = await request.json();
+  const ids: string[] = body.ids;
+
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return NextResponse.json({ error: "ids array is required" }, { status: 400 });
+  }
+
+  await prisma.emissionEntry.deleteMany({
+    where: { id: { in: ids } },
+  });
+
+  return NextResponse.json({ success: true, deleted: ids.length });
+}

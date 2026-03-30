@@ -25,6 +25,7 @@ export default function DashboardPage() {
   const [bySource, setBySource] = useState<SourceBreakdown[]>([]);
   const [trend, setTrend] = useState<TrendDataPoint[]>([]);
   const [missingData, setMissingData] = useState<{ missingCount: number; missing: { facility: string; sourceName: string; month: string }[] } | null>(null);
+  const [validationAlerts, setValidationAlerts] = useState<{ alertCount: number; alerts: { severity: string; message: string; facility: string; month: string }[] } | null>(null);
   const { buildQuery, selectedYear } = useDateFilter();
 
   const trendRef = useRef<HTMLDivElement>(null);
@@ -39,6 +40,7 @@ export default function DashboardPage() {
     fetch(`/api/dashboard/by-source?${q}`).then((r) => r.json()).then(setBySource).catch(() => {});
     fetch(`/api/dashboard/trend?${q}`).then((r) => r.json()).then(setTrend).catch(() => {});
     fetch(`/api/dashboard/missing-data?year=${selectedYear}`).then((r) => r.json()).then(setMissingData).catch(() => {});
+    fetch(`/api/dashboard/validation?year=${selectedYear}`).then((r) => r.json()).then(setValidationAlerts).catch(() => {});
   }, [buildQuery, selectedYear]);
 
   const total = stats?.total ?? 0;
@@ -75,6 +77,8 @@ export default function DashboardPage() {
           iconColor="text-emerald-600"
           iconBgColor="bg-emerald-50"
           href="/analytics"
+          sparklineData={trend.map((t) => t.total)}
+          sparklineColor="#059669"
         />
         <KpiCard
           title="Scope 1"
@@ -84,6 +88,8 @@ export default function DashboardPage() {
           iconColor="text-green-800"
           iconBgColor="bg-green-100"
           href="/emissions?scope=1"
+          sparklineData={trend.map((t) => t.scope1)}
+          sparklineColor="#166534"
         />
         <KpiCard
           title="Scope 2"
@@ -93,6 +99,8 @@ export default function DashboardPage() {
           iconColor="text-green-600"
           iconBgColor="bg-green-50"
           href="/emissions?scope=2"
+          sparklineData={trend.map((t) => t.scope2)}
+          sparklineColor="#22c55e"
         />
         <KpiCard
           title="Scope 3"
@@ -102,6 +110,8 @@ export default function DashboardPage() {
           iconColor="text-emerald-500"
           iconBgColor="bg-emerald-50"
           href="/emissions?scope=3"
+          sparklineData={trend.map((t) => t.scope3)}
+          sparklineColor="#86efac"
         />
         <KpiCard
           title="Logistics"
@@ -147,6 +157,34 @@ export default function DashboardPage() {
               <p className="mt-2 text-xs text-amber-600">
                 Upload missing data via <a href="/imports" className="underline font-medium">Import Data</a>
               </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Data Validation Alerts */}
+      {validationAlerts && validationAlerts.alertCount > 0 && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-5 w-5 text-red-600 shrink-0" />
+            <div className="flex-1">
+              <h4 className="text-sm font-semibold text-red-800">
+                {validationAlerts.alertCount} data {validationAlerts.alertCount === 1 ? "outlier" : "outliers"} detected
+              </h4>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {validationAlerts.alerts.slice(0, 6).map((a, i) => (
+                  <span key={i} className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                    a.severity === "critical" ? "bg-red-100 text-red-800" : "bg-yellow-100 text-yellow-800"
+                  }`}>
+                    {a.facility} &middot; {a.month}
+                  </span>
+                ))}
+                {validationAlerts.alertCount > 6 && (
+                  <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-700">
+                    +{validationAlerts.alertCount - 6} more
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>

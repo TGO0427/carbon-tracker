@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { ScopeBadge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Spinner } from "@/components/ui/spinner";
-import { Plus, Flame, Trash2, Pencil } from "lucide-react";
+import { Plus, Flame, Trash2, Pencil, X } from "lucide-react";
 import { formatNumber } from "@/lib/utils";
 import type { EmissionEntry } from "@/types";
 
@@ -18,6 +18,7 @@ function EmissionsContent() {
   const [emissions, setEmissions] = useState<EmissionEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [scopeFilter, setScopeFilter] = useState(searchParams.get("scope") ?? "");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const fetchEmissions = () => {
     setLoading(true);
@@ -36,6 +37,36 @@ function EmissionsContent() {
     if (!confirm("Delete this emission entry?")) return;
     await fetch(`/api/emissions/${id}`, { method: "DELETE" });
     fetchEmissions();
+  };
+
+  const handleBulkDelete = async () => {
+    const count = selectedIds.size;
+    if (count === 0) return;
+    if (!confirm(`Delete ${count} selected emission ${count === 1 ? "entry" : "entries"}?`)) return;
+    await fetch("/api/emissions", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: Array.from(selectedIds) }),
+    });
+    setSelectedIds(new Set());
+    fetchEmissions();
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === emissions.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(emissions.map((e) => e.id)));
+    }
   };
 
   return (
@@ -87,6 +118,14 @@ function EmissionsContent() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-gray-50">
+                  <th className="px-4 py-3 text-left">
+                    <input
+                      type="checkbox"
+                      checked={emissions.length > 0 && selectedIds.size === emissions.length}
+                      onChange={toggleSelectAll}
+                      className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                    />
+                  </th>
                   <th className="px-4 py-3 text-left font-medium text-gray-500">Source</th>
                   <th className="px-4 py-3 text-left font-medium text-gray-500">Site</th>
                   <th className="px-4 py-3 text-left font-medium text-gray-500">Scope</th>
@@ -98,7 +137,15 @@ function EmissionsContent() {
               </thead>
               <tbody>
                 {emissions.map((e) => (
-                  <tr key={e.id} className="border-b last:border-0 hover:bg-gray-50">
+                  <tr key={e.id} className={`border-b last:border-0 hover:bg-gray-50 ${selectedIds.has(e.id) ? "bg-emerald-50" : ""}`}>
+                    <td className="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(e.id)}
+                        onChange={() => toggleSelect(e.id)}
+                        className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                      />
+                    </td>
                     <td className="px-4 py-3 font-medium text-gray-900">{e.sourceName}</td>
                     <td className="px-4 py-3 text-gray-600">
                       {e.site?.name ?? "—"}
@@ -130,6 +177,29 @@ function EmissionsContent() {
             </table>
           </div>
         </Card>
+      )}
+
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 transform">
+          <div className="flex items-center gap-4 rounded-lg border border-gray-200 bg-white px-6 py-3 shadow-lg">
+            <span className="text-sm font-medium text-gray-700">
+              {selectedIds.size} selected
+            </span>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={handleBulkDelete}
+            >
+              <Trash2 className="h-4 w-4" /> Delete Selected
+            </Button>
+            <button
+              onClick={() => setSelectedIds(new Set())}
+              className="ml-1 rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

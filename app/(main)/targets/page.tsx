@@ -8,9 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Target, Plus, Trash2, TrendingDown, TrendingUp, CheckCircle2, AlertCircle } from "lucide-react";
+import { Target, Plus, Trash2, TrendingDown, TrendingUp, CheckCircle2, AlertCircle, ClipboardList } from "lucide-react";
 import { formatNumber } from "@/lib/utils";
 import type { Site } from "@/types";
+import Link from "next/link";
 
 interface TargetWithProgress {
   id: string;
@@ -97,9 +98,16 @@ export default function TargetsPage() {
         title="Emission Targets"
         description="Set reduction targets and track progress"
         action={
-          <Button onClick={() => setShowForm(!showForm)}>
-            <Plus className="h-4 w-4" /> {showForm ? "Cancel" : "Set Target"}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Link href="/targets/actions">
+              <Button variant="outline">
+                <ClipboardList className="h-4 w-4" /> Action Plans
+              </Button>
+            </Link>
+            <Button onClick={() => setShowForm(!showForm)}>
+              <Plus className="h-4 w-4" /> {showForm ? "Cancel" : "Set Target"}
+            </Button>
+          </div>
         }
       />
 

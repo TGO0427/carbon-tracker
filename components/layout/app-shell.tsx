@@ -7,7 +7,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header />
-        <main className="flex-1 overflow-y-auto bg-[#f8f9fb] p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto bg-[#f8f9fb] dark:bg-gray-900 p-6">{children}</main>
       </div>
     </div>
   );

@@ -86,5 +86,18 @@ export async function POST(request: Request) {
     }
   }
 
+  // Create audit log entry for the import
+  if (created > 0) {
+    await prisma.auditLog.create({
+      data: {
+        action: "import",
+        entity: "emission",
+        count: created,
+        details: `Imported ${created} emission entries${duplicates > 0 ? ` (${duplicates} duplicates skipped)` : ""}`,
+        userName: "Admin",
+      },
+    });
+  }
+
   return NextResponse.json({ success: true, created, duplicates });
 }
