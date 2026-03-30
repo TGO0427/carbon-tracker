@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Zap, Droplets, Flame, Fuel } from "lucide-react";
+import { Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Zap, Droplets, Flame, Fuel, AlertTriangle } from "lucide-react";
 import { formatNumber } from "@/lib/utils";
 import type { ReportingPeriod } from "@/types";
 
@@ -39,6 +39,13 @@ interface ParseResult {
   summary: { electricity: number; water: number; lpg: number; diesel: number };
 }
 
+interface DuplicateInfo {
+  facility: string;
+  month: string;
+  sourceName: string;
+  existing: number;
+}
+
 type ImportStep = "upload" | "preview" | "importing" | "done";
 
 export default function ImportsPage() {
@@ -49,8 +56,10 @@ export default function ImportsPage() {
   const [error, setError] = useState<string | null>(null);
   const [periods, setPeriods] = useState<ReportingPeriod[]>([]);
   const [selectedPeriodId, setSelectedPeriodId] = useState<string>("");
-  const [importResult, setImportResult] = useState<{ created: number } | null>(null);
+  const [importResult, setImportResult] = useState<{ created: number; duplicates: number } | null>(null);
   const [previewSection, setPreviewSection] = useState<string>("all");
+  const [duplicateEntries, setDuplicateEntries] = useState<DuplicateInfo[]>([]);
+  const [skipExisting, setSkipExisting] = useState(true);
 
   useEffect(() => {
     fetch("/api/reporting-periods").then((r) => r.json()).then((data: ReportingPeriod[]) => {
@@ -59,6 +68,32 @@ export default function ImportsPage() {
       if (active) setSelectedPeriodId(active.id);
     }).catch(() => {});
   }, []);
+
+  const checkDuplicates = async (entries: ParsedEntry[]) => {
+    try {
+      const res = await fetch("/api/imports/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ entries }),
+      });
+      if (res.ok) {
+        const data = await res.json() as { duplicates: DuplicateInfo[] };
+        setDuplicateEntries(data.duplicates);
+      }
+    } catch {
+      // Silently ignore check failures - not critical
+    }
+  };
+
+  const isDuplicate = (entry: ParsedEntry): boolean => {
+    return duplicateEntries.some(
+      (d) => d.sourceName === entry.sourceName && d.month === entry.month
+    );
+  };
+
+  const duplicateSet = new Set(
+    duplicateEntries.map((d) => `${d.sourceName}|${d.month}`)
+  );
 
   const handleUpload = async (file: File) => {
     setError(null);
@@ -78,6 +113,8 @@ export default function ImportsPage() {
       }
       setParseResult(data);
       setStep("preview");
+      // Automatically check for duplicates
+      await checkDuplicates(data.entries);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Upload failed");
     } finally {
@@ -89,12 +126,17 @@ export default function ImportsPage() {
     if (!parseResult) return;
     setStep("importing");
     try {
+      const entriesToImport = skipExisting
+        ? parseResult.entries.filter((e) => !isDuplicate(e))
+        : parseResult.entries;
+
       const res = await fetch("/api/imports/confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          entries: parseResult.entries,
+          entries: entriesToImport,
           reportingPeriodId: selectedPeriodId || null,
+          skipDuplicates: !skipExisting,
         }),
       });
       if (!res.ok) throw new Error("Import failed");
@@ -112,12 +154,18 @@ export default function ImportsPage() {
     setParseResult(null);
     setError(null);
     setImportResult(null);
+    setDuplicateEntries([]);
+    setSkipExisting(true);
     if (fileRef.current) fileRef.current.value = "";
   };
 
   const filteredEntries = parseResult?.entries.filter(
     (e) => previewSection === "all" || e.section === previewSection
   ) ?? [];
+
+  const importableCount = skipExisting
+    ? parseResult?.entries.filter((e) => !isDuplicate(e)).length ?? 0
+    : parseResult?.entryCount ?? 0;
 
   // Group entries by facility + section for summary
   const facilitySummary = parseResult ? (() => {
@@ -138,7 +186,7 @@ export default function ImportsPage() {
         description="Upload monthly emission data from Excel"
       />
 
-      {/* ── STEP 1: Upload ── */}
+      {/* -- STEP 1: Upload -- */}
       {step === "upload" && (
         <Card>
           <CardContent className="py-12">
@@ -149,7 +197,7 @@ export default function ImportsPage() {
               <div className="text-center">
                 <h3 className="text-lg font-semibold text-gray-900">Upload Excel File</h3>
                 <p className="mt-1 text-sm text-gray-500">
-                  Upload your monthly data file (e.g., "Data 2025.xlsx") with electricity, water, LPG, and diesel sections.
+                  Upload your monthly data file (e.g., &quot;Data 2025.xlsx&quot;) with electricity, water, LPG, and diesel sections.
                 </p>
               </div>
 
@@ -181,10 +229,10 @@ export default function ImportsPage() {
               <div className="mt-6 rounded-lg bg-gray-50 p-4 text-sm text-gray-500 max-w-lg">
                 <p className="font-medium text-gray-700 mb-2">Expected format:</p>
                 <ul className="space-y-1 list-disc list-inside">
-                  <li>Section headers: "ELECTRICITY USAGE", "WATER CONSUMPTION", "LP GAS USAGE", "FUEL USAGE"</li>
-                  <li>Facility rows: "Impilo - KWH", "Sizwe - KWH", "ISO Foods - KWH", etc.</li>
+                  <li>Section headers: &quot;ELECTRICITY USAGE&quot;, &quot;WATER CONSUMPTION&quot;, &quot;LP GAS USAGE&quot;, &quot;FUEL USAGE&quot;</li>
+                  <li>Facility rows: &quot;Impilo - KWH&quot;, &quot;Sizwe - KWH&quot;, &quot;ISO Foods - KWH&quot;, etc.</li>
                   <li>Columns B-M = Jan-Dec monthly values</li>
-                  <li>Year detected from header (e.g., "ELECTRICITY USAGE 2025")</li>
+                  <li>Year detected from header (e.g., &quot;ELECTRICITY USAGE 2025&quot;)</li>
                 </ul>
               </div>
             </div>
@@ -192,9 +240,31 @@ export default function ImportsPage() {
         </Card>
       )}
 
-      {/* ── STEP 2: Preview ── */}
+      {/* -- STEP 2: Preview -- */}
       {step === "preview" && parseResult && (
         <>
+          {/* Duplicate warning banner */}
+          {duplicateEntries.length > 0 && (
+            <div className="flex items-start gap-3 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-yellow-600" />
+              <div>
+                <p className="font-medium">
+                  {duplicateEntries.length} {duplicateEntries.length === 1 ? "entry already exists" : "entries already exist"} for these months.
+                  Importing will create additional entries.
+                </p>
+                <label className="mt-2 flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={skipExisting}
+                    onChange={(e) => setSkipExisting(e.target.checked)}
+                    className="rounded border-yellow-400 text-yellow-600 focus:ring-yellow-500"
+                  />
+                  <span>Skip existing months</span>
+                </label>
+              </div>
+            </div>
+          )}
+
           {/* Summary cards */}
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             {[
@@ -284,17 +354,28 @@ export default function ImportsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredEntries.map((e, i) => (
-                      <tr key={i} className="border-b last:border-0 hover:bg-gray-50">
-                        <td className="px-3 py-2 font-medium text-gray-900">{e.facility}</td>
-                        <td className="px-3 py-2 text-gray-600">{e.month}</td>
-                        <td className="px-3 py-2 text-right text-gray-600">{formatNumber(e.activityData)} {e.activityUnit}</td>
-                        <td className="px-3 py-2 text-right font-semibold text-gray-900">{formatNumber(e.totalEmissions, 4)}</td>
-                        <td className="px-3 py-2 text-gray-400 text-xs">
-                          {e.units.map((u) => `${u.unitLabel} (${Math.round(u.pct * 100)}%)`).join(", ")}
-                        </td>
-                      </tr>
-                    ))}
+                    {filteredEntries.map((e, i) => {
+                      const dup = duplicateSet.has(`${e.sourceName}|${e.month}`);
+                      return (
+                        <tr
+                          key={i}
+                          className={`border-b last:border-0 ${
+                            dup ? "bg-yellow-50 hover:bg-yellow-100" : "hover:bg-gray-50"
+                          }`}
+                        >
+                          <td className="px-3 py-2 font-medium text-gray-900">
+                            {e.facility}
+                            {dup && <span className="ml-2 text-xs text-yellow-600">(exists)</span>}
+                          </td>
+                          <td className="px-3 py-2 text-gray-600">{e.month}</td>
+                          <td className="px-3 py-2 text-right text-gray-600">{formatNumber(e.activityData)} {e.activityUnit}</td>
+                          <td className="px-3 py-2 text-right font-semibold text-gray-900">{formatNumber(e.totalEmissions, 4)}</td>
+                          <td className="px-3 py-2 text-gray-400 text-xs">
+                            {e.units.map((u) => `${u.unitLabel} (${Math.round(u.pct * 100)}%)`).join(", ")}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -321,7 +402,7 @@ export default function ImportsPage() {
                 <div className="flex gap-3">
                   <Button variant="secondary" onClick={handleReset}>Cancel</Button>
                   <Button onClick={handleConfirm}>
-                    Import {parseResult.entryCount} Entries
+                    Import {importableCount} Entries
                   </Button>
                 </div>
               </div>
@@ -335,7 +416,7 @@ export default function ImportsPage() {
         </>
       )}
 
-      {/* ── STEP 3: Importing ── */}
+      {/* -- STEP 3: Importing -- */}
       {step === "importing" && (
         <Card>
           <CardContent className="flex flex-col items-center gap-4 py-12">
@@ -345,7 +426,7 @@ export default function ImportsPage() {
         </Card>
       )}
 
-      {/* ── STEP 4: Done ── */}
+      {/* -- STEP 4: Done -- */}
       {step === "done" && importResult && (
         <Card>
           <CardContent className="flex flex-col items-center gap-4 py-12">
@@ -355,6 +436,9 @@ export default function ImportsPage() {
             <h3 className="text-lg font-semibold text-gray-900">Import Complete</h3>
             <p className="text-sm text-gray-500">
               Successfully created <span className="font-bold text-gray-900">{importResult.created}</span> emission entries.
+              {importResult.duplicates > 0 && (
+                <span className="text-yellow-600"> ({importResult.duplicates} duplicate entries skipped)</span>
+              )}
             </p>
             <Button onClick={handleReset} className="mt-4">Import Another File</Button>
           </CardContent>

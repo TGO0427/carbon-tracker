@@ -15,9 +15,10 @@ interface ImportEntry {
 }
 
 export async function POST(request: Request) {
-  const { entries, reportingPeriodId } = await request.json() as {
+  const { entries, reportingPeriodId, skipDuplicates = false } = await request.json() as {
     entries: ImportEntry[];
     reportingPeriodId: string | null;
+    skipDuplicates?: boolean;
   };
 
   if (!entries || entries.length === 0) {
@@ -32,9 +33,33 @@ export async function POST(request: Request) {
   }
 
   let created = 0;
+  let duplicates = 0;
 
   for (const entry of entries) {
     const emissionFactorId = factorIdMap[entry.emissionFactorName] ?? null;
+
+    // Check for existing entries with same sourceName, siteId, and month
+    const entryDate = new Date(`${entry.month}-15`);
+    const monthStart = new Date(entryDate.getFullYear(), entryDate.getMonth(), 1);
+    const monthEnd = new Date(entryDate.getFullYear(), entryDate.getMonth() + 1, 1);
+
+    const existingCount = await prisma.emissionEntry.count({
+      where: {
+        sourceName: entry.sourceName,
+        siteId: entry.siteId,
+        entryDate: {
+          gte: monthStart,
+          lt: monthEnd,
+        },
+      },
+    });
+
+    if (existingCount > 0) {
+      duplicates++;
+      if (!skipDuplicates) {
+        continue;
+      }
+    }
 
     for (const u of entry.units) {
       const activity = Math.round(entry.activityData * u.pct);
@@ -61,5 +86,5 @@ export async function POST(request: Request) {
     }
   }
 
-  return NextResponse.json({ success: true, created });
+  return NextResponse.json({ success: true, created, duplicates });
 }

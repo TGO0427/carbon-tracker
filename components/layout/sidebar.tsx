@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Flame, Calculator, Truck, Users,
   FileText, Settings, Leaf, ChevronDown, ChevronLeft,
-  ChevronRight, Search, Plus, BarChart3, MapPin, Upload,
+  ChevronRight, Search, Plus, BarChart3, MapPin, Upload, Target,
 } from "lucide-react";
 import { useState } from "react";
 import { useDateFilter } from "@/lib/date-filter-context";
@@ -42,6 +42,7 @@ const sections: NavSection[] = [
   {
     label: "ACTIONS",
     items: [
+      { href: "/targets", label: "Targets", icon: Target },
       { href: "/logistics", label: "Logistics", icon: Truck },
       { href: "/calculator", label: "Calculator", icon: Calculator },
     ],

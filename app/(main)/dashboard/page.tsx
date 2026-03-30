@@ -6,7 +6,7 @@ import { KpiCard } from "@/components/ui/kpi-card";
 import { Button } from "@/components/ui/button";
 import {
   Flame, Zap, Globe, Activity, Truck, Droplets,
-  Plus, Eye,
+  Plus, Eye, AlertTriangle,
 } from "lucide-react";
 import type { DashboardStats, ScopeBreakdown, SourceBreakdown, TrendDataPoint } from "@/types";
 import {
@@ -24,7 +24,8 @@ export default function DashboardPage() {
   const [byScope, setByScope] = useState<ScopeBreakdown[]>([]);
   const [bySource, setBySource] = useState<SourceBreakdown[]>([]);
   const [trend, setTrend] = useState<TrendDataPoint[]>([]);
-  const { buildQuery } = useDateFilter();
+  const [missingData, setMissingData] = useState<{ missingCount: number; missing: { facility: string; sourceName: string; month: string }[] } | null>(null);
+  const { buildQuery, selectedYear } = useDateFilter();
 
   const trendRef = useRef<HTMLDivElement>(null);
   const donutRef = useRef<HTMLDivElement>(null);
@@ -37,7 +38,8 @@ export default function DashboardPage() {
     fetch(`/api/dashboard/by-scope?${q}`).then((r) => r.json()).then(setByScope).catch(() => {});
     fetch(`/api/dashboard/by-source?${q}`).then((r) => r.json()).then(setBySource).catch(() => {});
     fetch(`/api/dashboard/trend?${q}`).then((r) => r.json()).then(setTrend).catch(() => {});
-  }, [buildQuery]);
+    fetch(`/api/dashboard/missing-data?year=${selectedYear}`).then((r) => r.json()).then(setMissingData).catch(() => {});
+  }, [buildQuery, selectedYear]);
 
   const total = stats?.total ?? 0;
 
@@ -120,6 +122,35 @@ export default function DashboardPage() {
           href="/analytics"
         />
       </div>
+
+      {/* Missing Data Alert */}
+      {missingData && missingData.missingCount > 0 && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-5 w-5 text-amber-600 shrink-0" />
+            <div className="flex-1">
+              <h4 className="text-sm font-semibold text-amber-800">
+                {missingData.missingCount} missing data {missingData.missingCount === 1 ? "point" : "points"} for {selectedYear}
+              </h4>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {missingData.missing.slice(0, 8).map((m, i) => (
+                  <span key={i} className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
+                    {m.facility} &middot; {m.sourceName.replace("Purchased ", "")} &middot; {m.month}
+                  </span>
+                ))}
+                {missingData.missingCount > 8 && (
+                  <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700">
+                    +{missingData.missingCount - 8} more
+                  </span>
+                )}
+              </div>
+              <p className="mt-2 text-xs text-amber-600">
+                Upload missing data via <a href="/imports" className="underline font-medium">Import Data</a>
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Charts Row 1: Trend + Scope Donut */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">

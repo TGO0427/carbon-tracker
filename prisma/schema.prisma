@@ -16,6 +16,7 @@ model Site {
   units     Unit[]
   emissions EmissionEntry[]
   shipments Shipment[]
+  targets   EmissionTarget[]
 }
 
 model Unit {
@@ -125,6 +126,21 @@ model Shipment {
   updatedAt DateTime @updatedAt
 
   legs TransportLeg[]
+}
+
+model EmissionTarget {
+  id             String  @id @default(cuid())
+  year           Int
+  scope          Int?
+  targetEmissions Float
+  baselineYear   Int
+  baselineEmissions Float
+  siteId         String?
+  site           Site?   @relation(fields: [siteId], references: [id])
+  notes          String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model TransportLeg {
