@@ -1,3 +1,35 @@
+export const SITES = [
+  {
+    id: "site-klapmuts",
+    name: "Klapmuts",
+    location: "Klapmuts, Western Cape",
+    units: [
+      { id: "unit-allmark-klap", name: "Allmark", number: null },
+      { id: "unit-groene-weide", name: "Groene Weide", number: null },
+      { id: "unit-k58", name: "K58", number: null },
+    ],
+  },
+  {
+    id: "site-pretoria",
+    name: "Pretoria",
+    location: "Pretoria, Gauteng",
+    units: [
+      { id: "unit-sizwe-6", name: "Sizwe", number: "Unit 6" },
+      { id: "unit-sizwe-7", name: "Sizwe", number: "Unit 7" },
+      { id: "unit-sizwe-8", name: "Sizwe", number: "Unit 8" },
+      { id: "unit-impilo-1", name: "Impilo", number: "Unit 1" },
+      { id: "unit-impilo-2", name: "Impilo", number: "Unit 2" },
+      { id: "unit-impilo-10", name: "Impilo", number: "Unit 10" },
+      { id: "unit-allmark-p5", name: "Allmark", number: "P5" },
+      { id: "unit-allmark-p6", name: "Allmark", number: "P6" },
+      { id: "unit-iso-foods-3", name: "ISO Foods", number: "Unit 3" },
+      { id: "unit-iso-foods-4", name: "ISO Foods", number: "Unit 4" },
+      { id: "unit-afi-5", name: "AFI", number: "Unit 5" },
+      { id: "unit-afi-9", name: "AFI", number: "Unit 9" },
+    ],
+  },
+] as const;
+
 export const SCOPES: Record<number, { label: string; color: string; bgColor: string; description: string }> = {
   1: {
     label: "Scope 1",

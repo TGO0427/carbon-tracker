@@ -6,7 +6,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   const { id } = await params;
   const entry = await prisma.emissionEntry.findUnique({
     where: { id },
-    include: { emissionFactor: true, reportingPeriod: true },
+    include: { emissionFactor: true, reportingPeriod: true, site: true, unit: true },
   });
 
   if (!entry) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -41,8 +41,10 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       notes: body.notes || null,
       entryDate: body.entryDate ? new Date(body.entryDate) : undefined,
       reportingPeriodId: body.reportingPeriodId || null,
+      siteId: body.siteId || null,
+      unitId: body.unitId || null,
     },
-    include: { emissionFactor: true },
+    include: { emissionFactor: true, site: true, unit: true },
   });
 
   return NextResponse.json(entry);

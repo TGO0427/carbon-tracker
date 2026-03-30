@@ -88,6 +88,7 @@ function EmissionsContent() {
               <thead>
                 <tr className="border-b bg-gray-50">
                   <th className="px-4 py-3 text-left font-medium text-gray-500">Source</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-500">Site</th>
                   <th className="px-4 py-3 text-left font-medium text-gray-500">Scope</th>
                   <th className="px-4 py-3 text-right font-medium text-gray-500">Activity Data</th>
                   <th className="px-4 py-3 text-right font-medium text-gray-500">Emissions (tCO2e)</th>
@@ -99,6 +100,10 @@ function EmissionsContent() {
                 {emissions.map((e) => (
                   <tr key={e.id} className="border-b last:border-0 hover:bg-gray-50">
                     <td className="px-4 py-3 font-medium text-gray-900">{e.sourceName}</td>
+                    <td className="px-4 py-3 text-gray-600">
+                      {e.site?.name ?? "—"}
+                      {e.unit?.name ? <span className="text-gray-400"> / {e.unit.name}{e.unit.number ? ` (${e.unit.number})` : ""}</span> : ""}
+                    </td>
                     <td className="px-4 py-3"><ScopeBadge scope={e.scope} /></td>
                     <td className="px-4 py-3 text-right text-gray-600">
                       {formatNumber(e.activityData)} {e.activityUnit}

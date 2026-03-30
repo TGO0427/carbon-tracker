@@ -1,3 +1,18 @@
+export interface Site {
+  id: string;
+  name: string;
+  location: string;
+  units?: Unit[];
+}
+
+export interface Unit {
+  id: string;
+  name: string;
+  number: string | null;
+  siteId: string;
+  site?: Site;
+}
+
 export interface ReportingPeriod {
   id: string;
   name: string;
@@ -32,6 +47,10 @@ export interface EmissionEntry {
   entryDate: string;
   reportingPeriodId: string | null;
   reportingPeriod?: ReportingPeriod | null;
+  siteId: string | null;
+  site?: Site | null;
+  unitId: string | null;
+  unit?: Unit | null;
 }
 
 export interface Supplier {
@@ -72,6 +91,10 @@ export interface Shipment {
   supplierId: string | null;
   supplier?: Supplier | null;
   reportingPeriodId: string | null;
+  siteId: string | null;
+  site?: Site | null;
+  unitId: string | null;
+  unit?: Unit | null;
   legs?: TransportLeg[];
 }
 

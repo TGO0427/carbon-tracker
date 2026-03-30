@@ -1,25 +1,14 @@
 import { prisma } from "@/lib/db";
+import { buildDateFilter } from "@/lib/api-date-filter";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = request.nextUrl;
-  const year = searchParams.get("year");
-  const month = searchParams.get("month");
-
-  const dateFilter: Record<string, unknown> = {};
-  if (year) {
-    const y = Number(year);
-    const startDate = new Date(y, month ? Number(month) - 1 : 0, 1);
-    const endDate = month
-      ? new Date(y, Number(month), 0, 23, 59, 59)
-      : new Date(y, 11, 31, 23, 59, 59);
-    dateFilter.shipmentDate = { gte: startDate, lte: endDate };
-  }
+  const shipmentWhere = buildDateFilter(request, "shipmentDate");
 
   const suppliers = await prisma.supplier.findMany({
     include: {
       shipments: {
-        where: dateFilter,
+        where: shipmentWhere,
         select: { totalEmissions: true },
       },
     },

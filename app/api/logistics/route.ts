@@ -6,11 +6,13 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const direction = searchParams.get("direction");
   const periodId = searchParams.get("periodId");
+  const siteId = searchParams.get("siteId");
 
   const shipments = await prisma.shipment.findMany({
     where: {
       ...(direction ? { direction } : {}),
       ...(periodId ? { reportingPeriodId: periodId } : {}),
+      ...(siteId ? { siteId } : {}),
     },
     include: {
       supplier: true,

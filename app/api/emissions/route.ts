@@ -7,16 +7,20 @@ export async function GET(request: NextRequest) {
   const scope = searchParams.get("scope");
   const category = searchParams.get("category");
   const periodId = searchParams.get("periodId");
+  const siteId = searchParams.get("siteId");
 
   const emissions = await prisma.emissionEntry.findMany({
     where: {
       ...(scope ? { scope: parseInt(scope) } : {}),
       ...(category ? { sourceCategory: category } : {}),
       ...(periodId ? { reportingPeriodId: periodId } : {}),
+      ...(siteId ? { siteId } : {}),
     },
     include: {
       emissionFactor: true,
       reportingPeriod: true,
+      site: true,
+      unit: true,
     },
     orderBy: { entryDate: "desc" },
   });
@@ -50,6 +54,8 @@ export async function POST(request: Request) {
       notes: body.notes || null,
       entryDate: body.entryDate ? new Date(body.entryDate) : new Date(),
       reportingPeriodId: body.reportingPeriodId || null,
+      siteId: body.siteId || null,
+      unitId: body.unitId || null,
     },
     include: {
       emissionFactor: true,

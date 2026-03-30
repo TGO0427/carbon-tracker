@@ -46,6 +46,55 @@ async function main() {
   }
   console.log(`Seeded ${factors.length} emission factors`);
 
+  // ─── Sites & Units ─────────────────────────────────────────────
+  const sitesData = [
+    {
+      id: "site-klapmuts",
+      name: "Klapmuts",
+      location: "Klapmuts, Western Cape",
+      units: [
+        { id: "unit-allmark-klap", name: "Allmark", number: null },
+        { id: "unit-groene-weide", name: "Groene Weide", number: null },
+        { id: "unit-k58", name: "K58", number: null },
+      ],
+    },
+    {
+      id: "site-pretoria",
+      name: "Pretoria",
+      location: "Pretoria, Gauteng",
+      units: [
+        { id: "unit-sizwe-6", name: "Sizwe", number: "Unit 6" },
+        { id: "unit-sizwe-7", name: "Sizwe", number: "Unit 7" },
+        { id: "unit-sizwe-8", name: "Sizwe", number: "Unit 8" },
+        { id: "unit-impilo-1", name: "Impilo", number: "Unit 1" },
+        { id: "unit-impilo-2", name: "Impilo", number: "Unit 2" },
+        { id: "unit-impilo-10", name: "Impilo", number: "Unit 10" },
+        { id: "unit-allmark-p5", name: "Allmark", number: "P5" },
+        { id: "unit-allmark-p6", name: "Allmark", number: "P6" },
+        { id: "unit-iso-foods-3", name: "ISO Foods", number: "Unit 3" },
+        { id: "unit-iso-foods-4", name: "ISO Foods", number: "Unit 4" },
+        { id: "unit-afi-5", name: "AFI", number: "Unit 5" },
+        { id: "unit-afi-9", name: "AFI", number: "Unit 9" },
+      ],
+    },
+  ];
+
+  for (const site of sitesData) {
+    await prisma.site.upsert({
+      where: { id: site.id },
+      update: { name: site.name, location: site.location },
+      create: { id: site.id, name: site.name, location: site.location },
+    });
+    for (const unit of site.units) {
+      await prisma.unit.upsert({
+        where: { id: unit.id },
+        update: { name: unit.name, number: unit.number, siteId: site.id },
+        create: { id: unit.id, name: unit.name, number: unit.number, siteId: site.id },
+      });
+    }
+  }
+  console.log("Seeded sites & units");
+
   // ─── Reporting Period ──────────────────────────────────────────
   await prisma.reportingPeriod.upsert({
     where: { id: "fy-2025-2026" },
@@ -84,42 +133,65 @@ async function main() {
     "2026-01", "2026-02", "2026-03",
   ];
 
-  // --- SCOPE 1: Diesel Fleet (total ~790.38 tCO2e, ~294919.5 litres) ---
+  // --- SCOPE 1: Diesel Fleet (Klapmuts sites + ISO Foods) ---
+  // Split: ~70% Klapmuts, ~30% ISO Foods (Pretoria)
   const dieselMonthly = [32000, 34500, 31200, 33800, 35100, 28500, 33200, 34819.5, 31800];
   for (let i = 0; i < months.length; i++) {
-    const activity = dieselMonthly[i];
+    const klapDiesel = Math.round(dieselMonthly[i] * 0.7);
+    const isoDiesel = dieselMonthly[i] - klapDiesel;
     await prisma.emissionEntry.create({
       data: {
-        scope: 1,
-        sourceName: "Diesel (Fleet)",
-        sourceCategory: "fuel",
-        activityData: activity,
-        activityUnit: "litres",
+        scope: 1, sourceName: "Diesel (Fleet)", sourceCategory: "fuel",
+        activityData: klapDiesel, activityUnit: "litres",
         emissionFactorId: factorMap["Diesel (Fleet)"],
-        totalEmissions: calculateEmission(activity, 2.68),
+        totalEmissions: calculateEmission(klapDiesel, 2.68),
         entryDate: new Date(`${months[i]}-15`),
         reportingPeriodId: periodId,
-        notes: `Monthly diesel consumption - ${months[i]}`,
+        siteId: "site-klapmuts",
+        notes: `Klapmuts diesel fleet - ${months[i]}`,
+      },
+    });
+    await prisma.emissionEntry.create({
+      data: {
+        scope: 1, sourceName: "Diesel (Fleet)", sourceCategory: "fuel",
+        activityData: isoDiesel, activityUnit: "litres",
+        emissionFactorId: factorMap["Diesel (Fleet)"],
+        totalEmissions: calculateEmission(isoDiesel, 2.68),
+        entryDate: new Date(`${months[i]}-15`),
+        reportingPeriodId: periodId,
+        siteId: "site-pretoria", unitId: "unit-iso-foods-3",
+        notes: `ISO Foods diesel fleet - ${months[i]}`,
       },
     });
   }
 
-  // --- SCOPE 1: LPG Boiler (total ~625.97 tCO2e, ~207274 kg) ---
+  // --- SCOPE 1: LPG - Sizwe Boiler (~60%) + Impilo Oven (~40%) ---
   const lpgMonthly = [25000, 24500, 22000, 21500, 19800, 18200, 24800, 26474, 25000];
   for (let i = 0; i < months.length; i++) {
-    const activity = lpgMonthly[i];
+    const sizweLpg = Math.round(lpgMonthly[i] * 0.6);
+    const impiloLpg = lpgMonthly[i] - sizweLpg;
     await prisma.emissionEntry.create({
       data: {
-        scope: 1,
-        sourceName: "LPG (Boiler)",
-        sourceCategory: "fuel",
-        activityData: activity,
-        activityUnit: "kg",
+        scope: 1, sourceName: "LPG (Boiler)", sourceCategory: "fuel",
+        activityData: sizweLpg, activityUnit: "kg",
         emissionFactorId: factorMap["LPG (Boiler)"],
-        totalEmissions: calculateEmission(activity, 3.02),
+        totalEmissions: calculateEmission(sizweLpg, 3.02),
         entryDate: new Date(`${months[i]}-15`),
         reportingPeriodId: periodId,
-        notes: `Monthly LPG usage - ${months[i]}`,
+        siteId: "site-pretoria", unitId: "unit-sizwe-6",
+        notes: `Sizwe LPG boiler - ${months[i]}`,
+      },
+    });
+    await prisma.emissionEntry.create({
+      data: {
+        scope: 1, sourceName: "LPG (Oven)", sourceCategory: "fuel",
+        activityData: impiloLpg, activityUnit: "kg",
+        emissionFactorId: factorMap["LPG (Boiler)"],
+        totalEmissions: calculateEmission(impiloLpg, 3.02),
+        entryDate: new Date(`${months[i]}-15`),
+        reportingPeriodId: periodId,
+        siteId: "site-pretoria", unitId: "unit-impilo-1",
+        notes: `Impilo LPG oven - ${months[i]}`,
       },
     });
   }
@@ -140,64 +212,92 @@ async function main() {
     },
   });
 
-  // --- SCOPE 2: Purchased Electricity (total ~2724.44 tCO2e, ~3322493 kWh) ---
+  // --- SCOPE 2: Purchased Electricity split across 5 metered sites ---
+  // Impilo, Sizwe, ISO Foods, Allmark P5 (Pretoria), Allmark Klapmuts
   const elecMonthly = [380000, 365000, 370000, 355000, 362000, 340000, 385000, 395493, 370000];
+  const elecSites = [
+    { label: "Impilo", siteId: "site-pretoria", unitId: "unit-impilo-1", pct: 0.25 },
+    { label: "Sizwe", siteId: "site-pretoria", unitId: "unit-sizwe-6", pct: 0.25 },
+    { label: "ISO Foods", siteId: "site-pretoria", unitId: "unit-iso-foods-3", pct: 0.20 },
+    { label: "Allmark P5", siteId: "site-pretoria", unitId: "unit-allmark-p5", pct: 0.15 },
+    { label: "Allmark Klapmuts", siteId: "site-klapmuts", unitId: "unit-allmark-klap", pct: 0.15 },
+  ];
   for (let i = 0; i < months.length; i++) {
-    const activity = elecMonthly[i];
-    await prisma.emissionEntry.create({
-      data: {
-        scope: 2,
-        sourceName: "Purchased Electricity",
-        sourceCategory: "energy",
-        activityData: activity,
-        activityUnit: "kWh",
-        emissionFactorId: factorMap["Purchased Electricity"],
-        totalEmissions: calculateEmission(activity, 0.82),
-        entryDate: new Date(`${months[i]}-15`),
-        reportingPeriodId: periodId,
-        notes: `Eskom grid electricity - ${months[i]}`,
-      },
-    });
+    for (const es of elecSites) {
+      const activity = Math.round(elecMonthly[i] * es.pct);
+      await prisma.emissionEntry.create({
+        data: {
+          scope: 2, sourceName: "Purchased Electricity", sourceCategory: "energy",
+          activityData: activity, activityUnit: "kWh",
+          emissionFactorId: factorMap["Purchased Electricity"],
+          totalEmissions: calculateEmission(activity, 0.82),
+          entryDate: new Date(`${months[i]}-15`),
+          reportingPeriodId: periodId,
+          siteId: es.siteId, unitId: es.unitId,
+          notes: `${es.label} electricity - ${months[i]}`,
+        },
+      });
+    }
   }
 
-  // --- SCOPE 3: Waste to Landfill (total ~45.60 tCO2e, ~24000 kg) ---
+  // --- SCOPE 3: Waste to Landfill (Klapmuts ~55%, Pretoria ~45%, not split by unit) ---
   const wasteMonthly = [2800, 2600, 2700, 2500, 2800, 2400, 2700, 2800, 2700];
   for (let i = 0; i < months.length; i++) {
-    const activity = wasteMonthly[i];
+    const klapWaste = Math.round(wasteMonthly[i] * 0.55);
+    const ptaWaste = wasteMonthly[i] - klapWaste;
     await prisma.emissionEntry.create({
       data: {
-        scope: 3,
-        sourceName: "Waste to Landfill",
-        sourceCategory: "waste",
-        activityData: activity,
-        activityUnit: "kg",
+        scope: 3, sourceName: "Waste to Landfill", sourceCategory: "waste",
+        activityData: klapWaste, activityUnit: "kg",
         emissionFactorId: factorMap["Waste to Landfill"],
-        totalEmissions: calculateEmission(activity, 1.9),
+        totalEmissions: calculateEmission(klapWaste, 1.9),
         entryDate: new Date(`${months[i]}-15`),
         reportingPeriodId: periodId,
-        notes: `General waste to landfill - ${months[i]}`,
+        siteId: "site-klapmuts",
+        notes: `Klapmuts waste to landfill - ${months[i]}`,
+      },
+    });
+    await prisma.emissionEntry.create({
+      data: {
+        scope: 3, sourceName: "Waste to Landfill", sourceCategory: "waste",
+        activityData: ptaWaste, activityUnit: "kg",
+        emissionFactorId: factorMap["Waste to Landfill"],
+        totalEmissions: calculateEmission(ptaWaste, 1.9),
+        entryDate: new Date(`${months[i]}-15`),
+        reportingPeriodId: periodId,
+        siteId: "site-pretoria",
+        notes: `Pretoria waste to landfill - ${months[i]}`,
       },
     });
   }
 
-  // --- SCOPE 3: Water Supply (total ~3.82 tCO2e, ~11231 m³) ---
+  // --- SCOPE 3: Water Supply split across 6 metered sites ---
+  // Impilo, Sizwe, ISO Foods, Allmark P5, Allmark P0 (Klapmuts), Allmark Klapmuts
   const waterMonthly = [1300, 1250, 1200, 1180, 1300, 1100, 1280, 1321, 1300];
+  const waterSites = [
+    { label: "Impilo", siteId: "site-pretoria", unitId: "unit-impilo-1", pct: 0.20 },
+    { label: "Sizwe", siteId: "site-pretoria", unitId: "unit-sizwe-6", pct: 0.20 },
+    { label: "ISO Foods", siteId: "site-pretoria", unitId: "unit-iso-foods-3", pct: 0.18 },
+    { label: "Allmark P5", siteId: "site-pretoria", unitId: "unit-allmark-p5", pct: 0.15 },
+    { label: "Allmark P6", siteId: "site-pretoria", unitId: "unit-allmark-p6", pct: 0.12 },
+    { label: "Allmark Klapmuts", siteId: "site-klapmuts", unitId: "unit-allmark-klap", pct: 0.15 },
+  ];
   for (let i = 0; i < months.length; i++) {
-    const activity = waterMonthly[i];
-    await prisma.emissionEntry.create({
-      data: {
-        scope: 3,
-        sourceName: "Water Supply",
-        sourceCategory: "water",
-        activityData: activity,
-        activityUnit: "m\u00B3",
-        emissionFactorId: factorMap["Water Supply"],
-        totalEmissions: calculateEmission(activity, 0.34),
-        entryDate: new Date(`${months[i]}-15`),
-        reportingPeriodId: periodId,
-        notes: `Municipal water consumption - ${months[i]}`,
-      },
-    });
+    for (const ws of waterSites) {
+      const activity = Math.round(waterMonthly[i] * ws.pct);
+      await prisma.emissionEntry.create({
+        data: {
+          scope: 3, sourceName: "Water Supply", sourceCategory: "water",
+          activityData: activity, activityUnit: "m\u00B3",
+          emissionFactorId: factorMap["Water Supply"],
+          totalEmissions: calculateEmission(activity, 0.34),
+          entryDate: new Date(`${months[i]}-15`),
+          reportingPeriodId: periodId,
+          siteId: ws.siteId, unitId: ws.unitId,
+          notes: `${ws.label} water consumption - ${months[i]}`,
+        },
+      });
+    }
   }
 
   // --- SCOPE 3: Business Travel - Air ---

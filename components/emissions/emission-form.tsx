@@ -9,7 +9,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { EMISSION_SOURCES } from "@/lib/constants";
 import { calculateEmission } from "@/lib/calculations";
 import { formatNumber } from "@/lib/utils";
-import type { EmissionFactor, EmissionEntry, ReportingPeriod } from "@/types";
+import type { EmissionFactor, EmissionEntry, ReportingPeriod, Site } from "@/types";
 
 interface EmissionFormProps {
   initialData?: EmissionEntry;
@@ -21,6 +21,7 @@ export function EmissionForm({ initialData }: EmissionFormProps) {
 
   const [factors, setFactors] = useState<EmissionFactor[]>([]);
   const [periods, setPeriods] = useState<ReportingPeriod[]>([]);
+  const [sites, setSites] = useState<Site[]>([]);
   const [saving, setSaving] = useState(false);
 
   const [scope, setScope] = useState(initialData?.scope?.toString() ?? "1");
@@ -35,9 +36,12 @@ export function EmissionForm({ initialData }: EmissionFormProps) {
     initialData?.entryDate ? new Date(initialData.entryDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0]
   );
   const [reportingPeriodId, setReportingPeriodId] = useState(initialData?.reportingPeriodId ?? "");
+  const [siteId, setSiteId] = useState(initialData?.siteId ?? "");
+  const [unitId, setUnitId] = useState(initialData?.unitId ?? "");
 
   useEffect(() => {
     fetch("/api/emission-factors").then((r) => r.json()).then(setFactors).catch(() => {});
+    fetch("/api/sites").then((r) => r.json()).then(setSites).catch(() => {});
     fetch("/api/reporting-periods").then((r) => r.json()).then((data: ReportingPeriod[]) => {
       setPeriods(data);
       if (!initialData) {
@@ -81,6 +85,8 @@ export function EmissionForm({ initialData }: EmissionFormProps) {
       notes: notes || null,
       entryDate,
       reportingPeriodId: reportingPeriodId || null,
+      siteId: siteId || null,
+      unitId: unitId || null,
     };
 
     const url = isEdit ? `/api/emissions/${initialData.id}` : "/api/emissions";
@@ -188,6 +194,29 @@ export function EmissionForm({ initialData }: EmissionFormProps) {
               onChange={(e) => setReportingPeriodId(e.target.value)}
               placeholder="Select period..."
               options={periods.map((p) => ({ value: p.id, label: p.name }))}
+            />
+
+            <Select
+              id="site"
+              label="Site"
+              value={siteId}
+              onChange={(e) => { setSiteId(e.target.value); setUnitId(""); }}
+              placeholder="Select site..."
+              options={sites.map((s) => ({ value: s.id, label: `${s.name} (${s.location})` }))}
+            />
+
+            <Select
+              id="unit"
+              label="Unit"
+              value={unitId}
+              onChange={(e) => setUnitId(e.target.value)}
+              placeholder={siteId ? "Select unit..." : "Select a site first"}
+              options={
+                (sites.find((s) => s.id === siteId)?.units ?? []).map((u) => ({
+                  value: u.id,
+                  label: u.number ? `${u.name} (${u.number})` : u.name,
+                }))
+              }
             />
           </div>
 

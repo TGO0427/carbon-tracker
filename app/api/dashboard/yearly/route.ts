@@ -1,9 +1,14 @@
 import { prisma } from "@/lib/db";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function GET() {
-  const emissions = await prisma.emissionEntry.findMany();
-  const shipments = await prisma.shipment.findMany();
+export async function GET(request: NextRequest) {
+  const { searchParams } = request.nextUrl;
+  const siteId = searchParams.get("siteId");
+
+  const siteFilter = siteId ? { siteId } : {};
+
+  const emissions = await prisma.emissionEntry.findMany({ where: siteFilter });
+  const shipments = await prisma.shipment.findMany({ where: siteFilter });
 
   const yearly: Record<number, { scope1: number; scope2: number; scope3: number }> = {};
 

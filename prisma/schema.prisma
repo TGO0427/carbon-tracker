@@ -6,6 +6,31 @@ datasource db {
   provider = "postgresql"
 }
 
+model Site {
+  id        String   @id @default(cuid())
+  name      String
+  location  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  units     Unit[]
+  emissions EmissionEntry[]
+  shipments Shipment[]
+}
+
+model Unit {
+  id        String   @id @default(cuid())
+  name      String
+  number    String?
+  siteId    String
+  site      Site     @relation(fields: [siteId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  emissions EmissionEntry[]
+  shipments Shipment[]
+}
+
 model ReportingPeriod {
   id        String   @id @default(cuid())
   name      String
@@ -51,6 +76,10 @@ model EmissionEntry {
   emissionFactor    EmissionFactor? @relation(fields: [emissionFactorId], references: [id])
   reportingPeriodId String?
   reportingPeriod   ReportingPeriod? @relation(fields: [reportingPeriodId], references: [id])
+  siteId            String?
+  site              Site?    @relation(fields: [siteId], references: [id])
+  unitId            String?
+  unit              Unit?    @relation(fields: [unitId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -87,6 +116,10 @@ model Shipment {
   supplier          Supplier? @relation(fields: [supplierId], references: [id])
   reportingPeriodId String?
   reportingPeriod   ReportingPeriod? @relation(fields: [reportingPeriodId], references: [id])
+  siteId            String?
+  site              Site?    @relation(fields: [siteId], references: [id])
+  unitId            String?
+  unit              Unit?    @relation(fields: [unitId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

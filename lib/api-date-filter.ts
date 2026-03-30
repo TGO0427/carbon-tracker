@@ -5,6 +5,7 @@ export function buildDateFilter(request: NextRequest, dateField: "entryDate" | "
   const periodId = searchParams.get("periodId");
   const year = searchParams.get("year");
   const month = searchParams.get("month");
+  const siteId = searchParams.get("siteId");
 
   const where: Record<string, unknown> = {};
   if (periodId) {
@@ -16,6 +17,10 @@ export function buildDateFilter(request: NextRequest, dateField: "entryDate" | "
       ? new Date(y, Number(month), 0, 23, 59, 59)
       : new Date(y, 11, 31, 23, 59, 59);
     where[dateField] = { gte: startDate, lte: endDate };
+  }
+
+  if (siteId) {
+    where.siteId = siteId;
   }
 
   return where;
