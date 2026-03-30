@@ -94,327 +94,294 @@ async function main() {
   }
   console.log("Seeded sites & units");
 
-  // ─── Reporting Period ──────────────────────────────────────────
+  // ─── Reporting Periods ─────────────────────────────────────────
   await prisma.reportingPeriod.upsert({
     where: { id: "fy-2025-2026" },
     update: {},
-    create: {
-      id: "fy-2025-2026",
-      name: "FY 2025-2026",
-      startDate: new Date("2025-07-01"),
-      endDate: new Date("2026-06-30"),
-      isActive: true,
-    },
+    create: { id: "fy-2025-2026", name: "FY 2025-2026", startDate: new Date("2025-07-01"), endDate: new Date("2026-06-30"), isActive: true },
   });
-
   await prisma.reportingPeriod.upsert({
     where: { id: "fy-2024-2025" },
     update: {},
-    create: {
-      id: "fy-2024-2025",
-      name: "FY 2024-2025",
-      startDate: new Date("2024-07-01"),
-      endDate: new Date("2025-06-30"),
-      isActive: false,
-    },
+    create: { id: "fy-2024-2025", name: "FY 2024-2025", startDate: new Date("2024-07-01"), endDate: new Date("2025-06-30"), isActive: false },
   });
   console.log("Seeded reporting periods");
 
-  // ─── Emission Entries (from PDF data) ──────────────────────────
-  // Data matches: Total 4,190.21 tCO2e
-  // Scope 1: 1,416.35 | Scope 2: 2,724.44 | Scope 3: 49.42
+  // ═══════════════════════════════════════════════════════════════
+  // REAL 2025 DATA from "Data 2025 (4).xlsx"
+  // ═══════════════════════════════════════════════════════════════
 
   const periodId = "fy-2025-2026";
-
-  // Monthly emission entries spread across the year for trend data
-  const months = [
+  const months2025 = [
+    "2025-01", "2025-02", "2025-03", "2025-04", "2025-05", "2025-06",
     "2025-07", "2025-08", "2025-09", "2025-10", "2025-11", "2025-12",
-    "2026-01", "2026-02", "2026-03",
   ];
 
-  // --- SCOPE 1: Diesel Fleet (Klapmuts sites + ISO Foods) ---
-  // Split: ~70% Klapmuts, ~30% ISO Foods (Pretoria)
-  const dieselMonthly = [32000, 34500, 31200, 33800, 35100, 28500, 33200, 34819.5, 31800];
-  for (let i = 0; i < months.length; i++) {
-    const klapDiesel = Math.round(dieselMonthly[i] * 0.7);
-    const isoDiesel = dieselMonthly[i] - klapDiesel;
-    await prisma.emissionEntry.create({
-      data: {
-        scope: 1, sourceName: "Diesel (Fleet)", sourceCategory: "fuel",
-        activityData: klapDiesel, activityUnit: "litres",
-        emissionFactorId: factorMap["Diesel (Fleet)"],
-        totalEmissions: calculateEmission(klapDiesel, 2.68),
-        entryDate: new Date(`${months[i]}-15`),
-        reportingPeriodId: periodId,
-        siteId: "site-klapmuts",
-        notes: `Klapmuts diesel fleet - ${months[i]}`,
-      },
-    });
-    await prisma.emissionEntry.create({
-      data: {
-        scope: 1, sourceName: "Diesel (Fleet)", sourceCategory: "fuel",
-        activityData: isoDiesel, activityUnit: "litres",
-        emissionFactorId: factorMap["Diesel (Fleet)"],
-        totalEmissions: calculateEmission(isoDiesel, 2.68),
-        entryDate: new Date(`${months[i]}-15`),
-        reportingPeriodId: periodId,
-        siteId: "site-pretoria", unitId: "unit-iso-foods-3",
-        notes: `ISO Foods diesel fleet - ${months[i]}`,
-      },
-    });
-  }
-
-  // --- SCOPE 1: LPG - Sizwe Boiler (~60%) + Impilo Oven (~40%) ---
-  // Sizwe boiler split across Unit 6 (40%), Unit 7 (35%), Unit 8 (25%)
-  // Impilo oven split across Unit 1 (45%), Unit 2 (35%), Unit 10 (20%)
-  const lpgMonthly = [25000, 24500, 22000, 21500, 19800, 18200, 24800, 26474, 25000];
-  const sizweLpgUnits = [
-    { unitId: "unit-sizwe-6", pct: 0.40 },
-    { unitId: "unit-sizwe-7", pct: 0.35 },
-    { unitId: "unit-sizwe-8", pct: 0.25 },
-  ];
-  const impiloLpgUnits = [
-    { unitId: "unit-impilo-1", pct: 0.45 },
-    { unitId: "unit-impilo-2", pct: 0.35 },
-    { unitId: "unit-impilo-10", pct: 0.20 },
-  ];
-  for (let i = 0; i < months.length; i++) {
-    const sizweLpg = Math.round(lpgMonthly[i] * 0.6);
-    const impiloLpg = lpgMonthly[i] - sizweLpg;
-    for (const u of sizweLpgUnits) {
-      const activity = Math.round(sizweLpg * u.pct);
-      await prisma.emissionEntry.create({
-        data: {
-          scope: 1, sourceName: "LPG (Boiler)", sourceCategory: "fuel",
-          activityData: activity, activityUnit: "kg",
-          emissionFactorId: factorMap["LPG (Boiler)"],
-          totalEmissions: calculateEmission(activity, 3.02),
-          entryDate: new Date(`${months[i]}-15`),
-          reportingPeriodId: periodId,
-          siteId: "site-pretoria", unitId: u.unitId,
-          notes: `Sizwe LPG boiler ${u.unitId.split("-").pop()} - ${months[i]}`,
-        },
-      });
-    }
-    for (const u of impiloLpgUnits) {
-      const activity = Math.round(impiloLpg * u.pct);
-      await prisma.emissionEntry.create({
-        data: {
-          scope: 1, sourceName: "LPG (Oven)", sourceCategory: "fuel",
-          activityData: activity, activityUnit: "kg",
-          emissionFactorId: factorMap["LPG (Boiler)"],
-          totalEmissions: calculateEmission(activity, 3.02),
-          entryDate: new Date(`${months[i]}-15`),
-          reportingPeriodId: periodId,
-          siteId: "site-pretoria", unitId: u.unitId,
-          notes: `Impilo LPG oven ${u.unitId.split("-").pop()} - ${months[i]}`,
-        },
-      });
+  // Helper to create emission entries for a facility, splitting across units
+  async function seedFacilityMonthly(opts: {
+    scope: number; sourceName: string; sourceCategory: string; activityUnit: string;
+    emissionFactorName: string; factor: number;
+    siteId: string;
+    monthlyData: (number | null)[];  // 12 months, null = no data
+    units: { unitId: string; pct: number }[];
+  }) {
+    for (let i = 0; i < 12; i++) {
+      const total = opts.monthlyData[i];
+      if (total === null || total === 0) continue;
+      for (const u of opts.units) {
+        const activity = Math.round(total * u.pct);
+        if (activity === 0) continue;
+        await prisma.emissionEntry.create({
+          data: {
+            scope: opts.scope,
+            sourceName: opts.sourceName,
+            sourceCategory: opts.sourceCategory,
+            activityData: activity,
+            activityUnit: opts.activityUnit,
+            emissionFactorId: factorMap[opts.emissionFactorName],
+            totalEmissions: calculateEmission(activity, opts.factor),
+            entryDate: new Date(`${months2025[i]}-15`),
+            reportingPeriodId: periodId,
+            siteId: opts.siteId,
+            unitId: u.unitId,
+          },
+        });
+      }
     }
   }
 
-  // --- SCOPE 1: Petrol Fleet (0 litres currently, but add a couple small entries) ---
-  await prisma.emissionEntry.create({
-    data: {
-      scope: 1,
-      sourceName: "Petrol (Fleet)",
-      sourceCategory: "fuel",
-      activityData: 0,
-      activityUnit: "litres",
-      emissionFactorId: factorMap["Petrol (Fleet)"],
-      totalEmissions: 0,
-      entryDate: new Date("2025-09-15"),
-      reportingPeriodId: periodId,
-      notes: "No petrol vehicles in fleet currently",
-    },
+  // ─── SCOPE 2: ELECTRICITY (kWh) — Real data ───────────────────
+
+  // Impilo total kWh per month (Row 3)
+  // Split across Unit 1 (40%), Unit 2 (35%), Unit 10 (25%)
+  await seedFacilityMonthly({
+    scope: 2, sourceName: "Purchased Electricity", sourceCategory: "energy",
+    activityUnit: "kWh", emissionFactorName: "Purchased Electricity", factor: 0.82,
+    siteId: "site-pretoria",
+    monthlyData: [99017, 86707, 104523, 95857, 111910, 100661, 113751, 96180, 89624, 112985, 117203, 66198],
+    units: [
+      { unitId: "unit-impilo-1", pct: 0.40 },
+      { unitId: "unit-impilo-2", pct: 0.35 },
+      { unitId: "unit-impilo-10", pct: 0.25 },
+    ],
   });
 
-  // --- SCOPE 2: Purchased Electricity split per unit ---
-  // Facility totals: Impilo 23%, Sizwe 23%, ISO Foods 18%, Allmark PTA 13%, AFI 8%, Allmark Klap 15%
-  // Then split within each facility across individual units
-  const elecMonthly = [380000, 365000, 370000, 355000, 362000, 340000, 385000, 395493, 370000];
-  const elecUnits = [
-    // Impilo: 23% total → Unit 1 (40%), Unit 2 (35%), Unit 10 (25%)
-    { label: "Impilo Unit 1", siteId: "site-pretoria", unitId: "unit-impilo-1", pct: 0.23 * 0.40 },
-    { label: "Impilo Unit 2", siteId: "site-pretoria", unitId: "unit-impilo-2", pct: 0.23 * 0.35 },
-    { label: "Impilo Unit 10", siteId: "site-pretoria", unitId: "unit-impilo-10", pct: 0.23 * 0.25 },
-    // Sizwe: 23% total → Unit 6 (40%), Unit 7 (35%), Unit 8 (25%)
-    { label: "Sizwe Unit 6", siteId: "site-pretoria", unitId: "unit-sizwe-6", pct: 0.23 * 0.40 },
-    { label: "Sizwe Unit 7", siteId: "site-pretoria", unitId: "unit-sizwe-7", pct: 0.23 * 0.35 },
-    { label: "Sizwe Unit 8", siteId: "site-pretoria", unitId: "unit-sizwe-8", pct: 0.23 * 0.25 },
-    // ISO Foods: 18% total → Unit 3 (55%), Unit 4 (45%)
-    { label: "ISO Foods Unit 3", siteId: "site-pretoria", unitId: "unit-iso-foods-3", pct: 0.18 * 0.55 },
-    { label: "ISO Foods Unit 4", siteId: "site-pretoria", unitId: "unit-iso-foods-4", pct: 0.18 * 0.45 },
-    // Allmark P5 & P6 (Pretoria): 13% total → P5 (60%), P6 (40%)
-    { label: "Allmark P5", siteId: "site-pretoria", unitId: "unit-allmark-p5", pct: 0.13 * 0.60 },
-    { label: "Allmark P6", siteId: "site-pretoria", unitId: "unit-allmark-p6", pct: 0.13 * 0.40 },
-    // AFI: 8% total → Unit 5 (55%), Unit 9 (45%)
-    { label: "AFI Unit 5", siteId: "site-pretoria", unitId: "unit-afi-5", pct: 0.08 * 0.55 },
-    { label: "AFI Unit 9", siteId: "site-pretoria", unitId: "unit-afi-9", pct: 0.08 * 0.45 },
-    // Allmark Klapmuts: 15% total → Groene Weide (60%), K58 (40%)
-    { label: "Allmark Groene Weide", siteId: "site-klapmuts", unitId: "unit-allmark-groene-weide", pct: 0.15 * 0.60 },
-    { label: "Allmark K58", siteId: "site-klapmuts", unitId: "unit-allmark-k58", pct: 0.15 * 0.40 },
-  ];
-  for (let i = 0; i < months.length; i++) {
-    for (const eu of elecUnits) {
-      const activity = Math.round(elecMonthly[i] * eu.pct);
-      await prisma.emissionEntry.create({
-        data: {
-          scope: 2, sourceName: "Purchased Electricity", sourceCategory: "energy",
-          activityData: activity, activityUnit: "kWh",
-          emissionFactorId: factorMap["Purchased Electricity"],
-          totalEmissions: calculateEmission(activity, 0.82),
-          entryDate: new Date(`${months[i]}-15`),
-          reportingPeriodId: periodId,
-          siteId: eu.siteId, unitId: eu.unitId,
-          notes: `${eu.label} electricity - ${months[i]}`,
-        },
-      });
-    }
-  }
+  // Sizwe total kWh per month (Row 6)
+  // Split across Unit 6 (40%), Unit 7 (35%), Unit 8 (25%)
+  await seedFacilityMonthly({
+    scope: 2, sourceName: "Purchased Electricity", sourceCategory: "energy",
+    activityUnit: "kWh", emissionFactorName: "Purchased Electricity", factor: 0.82,
+    siteId: "site-pretoria",
+    monthlyData: [71664, 103363, 130404, 74074, 28163, 37964, 49401, 108187, 111200, 92205, 61047, 46518],
+    units: [
+      { unitId: "unit-sizwe-6", pct: 0.40 },
+      { unitId: "unit-sizwe-7", pct: 0.35 },
+      { unitId: "unit-sizwe-8", pct: 0.25 },
+    ],
+  });
 
-  // --- SCOPE 3: Waste to Landfill (Klapmuts ~55%, Pretoria ~45%, not split by unit) ---
-  const wasteMonthly = [2800, 2600, 2700, 2500, 2800, 2400, 2700, 2800, 2700];
-  for (let i = 0; i < months.length; i++) {
-    const klapWaste = Math.round(wasteMonthly[i] * 0.55);
-    const ptaWaste = wasteMonthly[i] - klapWaste;
+  // ISO Foods total kWh per month (Row 9)
+  // Split across Unit 3 (55%), Unit 4 (45%)
+  await seedFacilityMonthly({
+    scope: 2, sourceName: "Purchased Electricity", sourceCategory: "energy",
+    activityUnit: "kWh", emissionFactorName: "Purchased Electricity", factor: 0.82,
+    siteId: "site-pretoria",
+    monthlyData: [42680, 60720, 57280, 73840, 84960, 70200, 80960, 70840, 27320, 81600, 87640, 54600],
+    units: [
+      { unitId: "unit-iso-foods-3", pct: 0.55 },
+      { unitId: "unit-iso-foods-4", pct: 0.45 },
+    ],
+  });
+
+  // Allmark P5 & P9 total kWh per month (Row 12)
+  // Split across P5 (60%), P6 (40%)
+  await seedFacilityMonthly({
+    scope: 2, sourceName: "Purchased Electricity", sourceCategory: "energy",
+    activityUnit: "kWh", emissionFactorName: "Purchased Electricity", factor: 0.82,
+    siteId: "site-pretoria",
+    monthlyData: [23686, 21600, 24081, 23630, 25576, 28342, 23104, 24076, 24358, 25301, 10720, 15373],
+    units: [
+      { unitId: "unit-allmark-p5", pct: 0.60 },
+      { unitId: "unit-allmark-p6", pct: 0.40 },
+    ],
+  });
+
+  // Allmark Klapmuts kWh per month (Row 15) — flat 12600/month
+  // Split across Groene Weide (60%), K58 (40%)
+  await seedFacilityMonthly({
+    scope: 2, sourceName: "Purchased Electricity", sourceCategory: "energy",
+    activityUnit: "kWh", emissionFactorName: "Purchased Electricity", factor: 0.82,
+    siteId: "site-klapmuts",
+    monthlyData: [12600, 12600, 12600, 12600, 12600, 12600, 12600, 12600, 12600, 12600, 12600, 12600],
+    units: [
+      { unitId: "unit-allmark-groene-weide", pct: 0.60 },
+      { unitId: "unit-allmark-k58", pct: 0.40 },
+    ],
+  });
+
+  console.log("Seeded electricity (real data)");
+
+  // ─── SCOPE 3: WATER (kL = m³) — Real data ─────────────────────
+
+  // Impilo water kL per month (Row 21) — Dec missing
+  await seedFacilityMonthly({
+    scope: 3, sourceName: "Water Supply", sourceCategory: "water",
+    activityUnit: "m\u00B3", emissionFactorName: "Water Supply", factor: 0.34,
+    siteId: "site-pretoria",
+    monthlyData: [63, 55, 44, 44, 44, 48, 68, 39, 45, 51, 53, null],
+    units: [
+      { unitId: "unit-impilo-1", pct: 0.40 },
+      { unitId: "unit-impilo-2", pct: 0.35 },
+      { unitId: "unit-impilo-10", pct: 0.25 },
+    ],
+  });
+
+  // Sizwe water kL per month (Row 24) — Dec missing
+  await seedFacilityMonthly({
+    scope: 3, sourceName: "Water Supply", sourceCategory: "water",
+    activityUnit: "m\u00B3", emissionFactorName: "Water Supply", factor: 0.34,
+    siteId: "site-pretoria",
+    monthlyData: [222, 223, 204, 177, 177, 167, 138, 187, 231, 239, 208, null],
+    units: [
+      { unitId: "unit-sizwe-6", pct: 0.40 },
+      { unitId: "unit-sizwe-7", pct: 0.35 },
+      { unitId: "unit-sizwe-8", pct: 0.25 },
+    ],
+  });
+
+  // ISO Foods water kL per month (Row 26) — Dec missing
+  await seedFacilityMonthly({
+    scope: 3, sourceName: "Water Supply", sourceCategory: "water",
+    activityUnit: "m\u00B3", emissionFactorName: "Water Supply", factor: 0.34,
+    siteId: "site-pretoria",
+    monthlyData: [226, 340, 245, 320, 320, 424, 441, 322, 144, 323, 321, null],
+    units: [
+      { unitId: "unit-iso-foods-3", pct: 0.55 },
+      { unitId: "unit-iso-foods-4", pct: 0.45 },
+    ],
+  });
+
+  // Allmark P5 water kL per month (Row 28) — Dec missing
+  await seedFacilityMonthly({
+    scope: 3, sourceName: "Water Supply", sourceCategory: "water",
+    activityUnit: "m\u00B3", emissionFactorName: "Water Supply", factor: 0.34,
+    siteId: "site-pretoria",
+    monthlyData: [174, 189, 197, 204, 239, 215, 223, 169, 145, 158, 157, null],
+    units: [{ unitId: "unit-allmark-p5", pct: 1.0 }],
+  });
+
+  // Allmark P9 (P6) water kL per month (Row 29) — Dec missing
+  await seedFacilityMonthly({
+    scope: 3, sourceName: "Water Supply", sourceCategory: "water",
+    activityUnit: "m\u00B3", emissionFactorName: "Water Supply", factor: 0.34,
+    siteId: "site-pretoria",
+    monthlyData: [49, 74, 74, 64, 76, 64, 76, 58, 57, 59, 65, null],
+    units: [{ unitId: "unit-allmark-p6", pct: 1.0 }],
+  });
+
+  // Allmark Klapmuts water kL per month (Row 32) — Oct-Dec missing
+  await seedFacilityMonthly({
+    scope: 3, sourceName: "Water Supply", sourceCategory: "water",
+    activityUnit: "m\u00B3", emissionFactorName: "Water Supply", factor: 0.34,
+    siteId: "site-klapmuts",
+    monthlyData: [250, 101, 281, 218, 308, 164, 295, 337, 337, null, null, null],
+    units: [
+      { unitId: "unit-allmark-groene-weide", pct: 0.60 },
+      { unitId: "unit-allmark-k58", pct: 0.40 },
+    ],
+  });
+
+  console.log("Seeded water (real data)");
+
+  // ─── SCOPE 1: LPG GAS (kg) — Real data ────────────────────────
+
+  // Impilo LPG Oven kg per month (Row 41)
+  await seedFacilityMonthly({
+    scope: 1, sourceName: "LPG (Oven)", sourceCategory: "fuel",
+    activityUnit: "kg", emissionFactorName: "LPG (Boiler)", factor: 3.02,
+    siteId: "site-pretoria",
+    monthlyData: [9461, 6001, 6429, 10452, 10504, 10358, 13108, 9956, 8632, 13413, 13036, 4469],
+    units: [
+      { unitId: "unit-impilo-1", pct: 0.45 },
+      { unitId: "unit-impilo-2", pct: 0.35 },
+      { unitId: "unit-impilo-10", pct: 0.20 },
+    ],
+  });
+
+  // Sizwe LPG Boiler kg per month (Row 44)
+  await seedFacilityMonthly({
+    scope: 1, sourceName: "LPG (Boiler)", sourceCategory: "fuel",
+    activityUnit: "kg", emissionFactorName: "LPG (Boiler)", factor: 3.02,
+    siteId: "site-pretoria",
+    monthlyData: [2134, 5954, 7671, 4162, 7616, 6771, 5475, 10339, 12668, 12945, 8200, 7520],
+    units: [
+      { unitId: "unit-sizwe-6", pct: 0.40 },
+      { unitId: "unit-sizwe-7", pct: 0.35 },
+      { unitId: "unit-sizwe-8", pct: 0.25 },
+    ],
+  });
+
+  console.log("Seeded LPG gas (real data)");
+
+  // ─── SCOPE 1: DIESEL FUEL (litres) — Real data ────────────────
+
+  // Klapmuts diesel litres per month (Row 50)
+  await seedFacilityMonthly({
+    scope: 1, sourceName: "Diesel (Fleet)", sourceCategory: "fuel",
+    activityUnit: "litres", emissionFactorName: "Diesel (Fleet)", factor: 2.68,
+    siteId: "site-klapmuts",
+    monthlyData: [750, 1050, 1000, 800, 900, 600, 1000, 600, 750, 861, 1016.5, 348],
+    units: [
+      { unitId: "unit-allmark-groene-weide", pct: 0.60 },
+      { unitId: "unit-allmark-k58", pct: 0.40 },
+    ],
+  });
+
+  // ISO Foods diesel litres per month (Row 54)
+  await seedFacilityMonthly({
+    scope: 1, sourceName: "Diesel (Fleet)", sourceCategory: "fuel",
+    activityUnit: "litres", emissionFactorName: "Diesel (Fleet)", factor: 2.68,
+    siteId: "site-pretoria",
+    monthlyData: [20900, 19455, 19493, 24493, 30805, 32028, 31185, 25072, 11000, 28356, 28612, 13845],
+    units: [
+      { unitId: "unit-iso-foods-3", pct: 0.55 },
+      { unitId: "unit-iso-foods-4", pct: 0.45 },
+    ],
+  });
+
+  console.log("Seeded diesel fuel (real data)");
+
+  // ─── SCOPE 3: WASTE TO LANDFILL — From Sheet2 total ────────────
+  // Total: 24,000 kg for the year, split evenly across 12 months
+  // Measured at site level (Klapmuts 55%, Pretoria 45%)
+  for (let i = 0; i < 12; i++) {
+    const monthlyWaste = 2000; // 24000 / 12
     await prisma.emissionEntry.create({
       data: {
         scope: 3, sourceName: "Waste to Landfill", sourceCategory: "waste",
-        activityData: klapWaste, activityUnit: "kg",
+        activityData: Math.round(monthlyWaste * 0.55), activityUnit: "kg",
         emissionFactorId: factorMap["Waste to Landfill"],
-        totalEmissions: calculateEmission(klapWaste, 1.9),
-        entryDate: new Date(`${months[i]}-15`),
+        totalEmissions: calculateEmission(Math.round(monthlyWaste * 0.55), 1.9),
+        entryDate: new Date(`${months2025[i]}-15`),
         reportingPeriodId: periodId,
         siteId: "site-klapmuts",
-        notes: `Klapmuts waste to landfill - ${months[i]}`,
       },
     });
     await prisma.emissionEntry.create({
       data: {
         scope: 3, sourceName: "Waste to Landfill", sourceCategory: "waste",
-        activityData: ptaWaste, activityUnit: "kg",
+        activityData: Math.round(monthlyWaste * 0.45), activityUnit: "kg",
         emissionFactorId: factorMap["Waste to Landfill"],
-        totalEmissions: calculateEmission(ptaWaste, 1.9),
-        entryDate: new Date(`${months[i]}-15`),
+        totalEmissions: calculateEmission(Math.round(monthlyWaste * 0.45), 1.9),
+        entryDate: new Date(`${months2025[i]}-15`),
         reportingPeriodId: periodId,
         siteId: "site-pretoria",
-        notes: `Pretoria waste to landfill - ${months[i]}`,
       },
     });
   }
 
-  // --- SCOPE 3: Water Supply split per unit ---
-  // Same facility distribution as electricity, then split within facilities
-  const waterMonthly = [1300, 1250, 1200, 1180, 1300, 1100, 1280, 1321, 1300];
-  const waterUnits = [
-    // Impilo: 18% → Unit 1 (40%), Unit 2 (35%), Unit 10 (25%)
-    { label: "Impilo Unit 1", siteId: "site-pretoria", unitId: "unit-impilo-1", pct: 0.18 * 0.40 },
-    { label: "Impilo Unit 2", siteId: "site-pretoria", unitId: "unit-impilo-2", pct: 0.18 * 0.35 },
-    { label: "Impilo Unit 10", siteId: "site-pretoria", unitId: "unit-impilo-10", pct: 0.18 * 0.25 },
-    // Sizwe: 18% → Unit 6 (40%), Unit 7 (35%), Unit 8 (25%)
-    { label: "Sizwe Unit 6", siteId: "site-pretoria", unitId: "unit-sizwe-6", pct: 0.18 * 0.40 },
-    { label: "Sizwe Unit 7", siteId: "site-pretoria", unitId: "unit-sizwe-7", pct: 0.18 * 0.35 },
-    { label: "Sizwe Unit 8", siteId: "site-pretoria", unitId: "unit-sizwe-8", pct: 0.18 * 0.25 },
-    // ISO Foods: 16% → Unit 3 (55%), Unit 4 (45%)
-    { label: "ISO Foods Unit 3", siteId: "site-pretoria", unitId: "unit-iso-foods-3", pct: 0.16 * 0.55 },
-    { label: "ISO Foods Unit 4", siteId: "site-pretoria", unitId: "unit-iso-foods-4", pct: 0.16 * 0.45 },
-    // Allmark P5 (13%), Allmark P6 (10%)
-    { label: "Allmark P5", siteId: "site-pretoria", unitId: "unit-allmark-p5", pct: 0.13 },
-    { label: "Allmark P6", siteId: "site-pretoria", unitId: "unit-allmark-p6", pct: 0.10 },
-    // AFI: 7% → Unit 5 (55%), Unit 9 (45%)
-    { label: "AFI Unit 5", siteId: "site-pretoria", unitId: "unit-afi-5", pct: 0.07 * 0.55 },
-    { label: "AFI Unit 9", siteId: "site-pretoria", unitId: "unit-afi-9", pct: 0.07 * 0.45 },
-    // Allmark Klapmuts: 15% → Groene Weide (60%), K58 (40%)
-    { label: "Allmark Groene Weide", siteId: "site-klapmuts", unitId: "unit-allmark-groene-weide", pct: 0.15 * 0.60 },
-    { label: "Allmark K58", siteId: "site-klapmuts", unitId: "unit-allmark-k58", pct: 0.15 * 0.40 },
-  ];
-  for (let i = 0; i < months.length; i++) {
-    for (const wu of waterUnits) {
-      const activity = Math.round(waterMonthly[i] * wu.pct);
-      await prisma.emissionEntry.create({
-        data: {
-          scope: 3, sourceName: "Water Supply", sourceCategory: "water",
-          activityData: activity, activityUnit: "m\u00B3",
-          emissionFactorId: factorMap["Water Supply"],
-          totalEmissions: calculateEmission(activity, 0.34),
-          entryDate: new Date(`${months[i]}-15`),
-          reportingPeriodId: periodId,
-          siteId: wu.siteId, unitId: wu.unitId,
-          notes: `${wu.label} water consumption - ${months[i]}`,
-        },
-      });
-    }
-  }
-
-  // --- SCOPE 3: Business Travel - Air ---
-  await prisma.emissionEntry.create({
-    data: {
-      scope: 3,
-      sourceName: "Business Travel - Air",
-      sourceCategory: "travel",
-      activityData: 45000,
-      activityUnit: "passenger-km",
-      emissionFactorId: factorMap["Business Travel - Air"],
-      totalEmissions: calculateEmission(45000, 0.15),
-      entryDate: new Date("2025-10-15"),
-      reportingPeriodId: periodId,
-      notes: "Q2 business flights (JHB-CPT, JHB-DBN routes)",
-    },
-  });
-
-  await prisma.emissionEntry.create({
-    data: {
-      scope: 3,
-      sourceName: "Business Travel - Air",
-      sourceCategory: "travel",
-      activityData: 32000,
-      activityUnit: "passenger-km",
-      emissionFactorId: factorMap["Business Travel - Air"],
-      totalEmissions: calculateEmission(32000, 0.15),
-      entryDate: new Date("2026-01-20"),
-      reportingPeriodId: periodId,
-      notes: "Q3 business flights",
-    },
-  });
-
-  // --- SCOPE 3: Business Travel - Car ---
-  await prisma.emissionEntry.create({
-    data: {
-      scope: 3,
-      sourceName: "Business Travel - Car",
-      sourceCategory: "travel",
-      activityData: 18500,
-      activityUnit: "km",
-      emissionFactorId: factorMap["Business Travel - Car"],
-      totalEmissions: calculateEmission(18500, 0.21),
-      entryDate: new Date("2025-11-15"),
-      reportingPeriodId: periodId,
-      notes: "Staff car travel for client visits",
-    },
-  });
-
-  // --- SCOPE 3: Employee Commuting ---
-  const commuteMonthly = [12000, 11800, 12200, 12000, 11500, 10000, 12000, 12500, 12000];
-  for (let i = 0; i < months.length; i++) {
-    const activity = commuteMonthly[i];
-    await prisma.emissionEntry.create({
-      data: {
-        scope: 3,
-        sourceName: "Employee Commuting",
-        sourceCategory: "travel",
-        activityData: activity,
-        activityUnit: "km",
-        emissionFactorId: factorMap["Employee Commuting"],
-        totalEmissions: calculateEmission(activity, 0.15),
-        entryDate: new Date(`${months[i]}-15`),
-        reportingPeriodId: periodId,
-        notes: `Estimated employee commuting - ${months[i]}`,
-      },
-    });
-  }
-
-  console.log("Seeded emission entries (9 months of data)");
+  console.log("Seeded waste (real data)");
+  console.log("Seeded all emission entries (real 2025 data)");
 
   // ─── Suppliers ─────────────────────────────────────────────────
   const supplierData = [
@@ -429,286 +396,116 @@ async function main() {
   ];
 
   for (const sup of supplierData) {
-    await prisma.supplier.upsert({
-      where: { id: sup.id },
-      update: sup,
-      create: sup,
-    });
+    await prisma.supplier.upsert({ where: { id: sup.id }, update: sup, create: sup });
   }
   console.log(`Seeded ${supplierData.length} suppliers & buyers`);
 
   // ─── Shipments with Transport Legs ─────────────────────────────
+  const shippingMonths = [
+    "2025-07", "2025-08", "2025-09", "2025-10", "2025-11", "2025-12",
+    "2026-01", "2026-02", "2026-03",
+  ];
 
-  // Inbound: ChemCo SA - truck from JHB to Paarl (350km, 12 tonnes, 4x/month)
-  for (let m = 0; m < 9; m++) {
-    for (let delivery = 1; delivery <= 4; delivery++) {
-      const day = delivery * 7;
-      const dayStr = day < 10 ? `0${day}` : `${day}`;
-      const weight = 12;
-      const distance = 350;
-      const legEmission = calculateTransportLeg(distance, weight, 0.105);
-
+  // Inbound: ChemCo SA - truck from JHB to Paarl (350km, 12t, 4x/month)
+  for (let m = 0; m < shippingMonths.length; m++) {
+    for (let d = 1; d <= 4; d++) {
+      const day = d * 7;
+      const legEm = calculateTransportLeg(350, 12, 0.105);
       await prisma.shipment.create({
         data: {
-          reference: `INB-CHM-${months[m].replace("-", "")}-${delivery}`,
-          direction: "inbound",
-          supplierId: "sup-chemical-sa",
+          reference: `INB-CHM-${shippingMonths[m].replace("-", "")}-${d}`,
+          direction: "inbound", supplierId: "sup-chemical-sa",
           productDescription: "Chemical raw materials",
-          totalWeightTonnes: weight,
-          totalEmissions: legEmission,
-          shipmentDate: new Date(`${months[m]}-${dayStr}`),
+          totalWeightTonnes: 12, totalEmissions: legEm,
+          shipmentDate: new Date(`${shippingMonths[m]}-${day < 10 ? "0" + day : day}`),
           reportingPeriodId: periodId,
-          notes: "Regular weekly delivery from Johannesburg",
-          legs: {
-            create: [{
-              legOrder: 1,
-              mode: "road",
-              origin: "Johannesburg",
-              destination: "Paarl",
-              distanceKm: distance,
-              emissionFactor: 0.105,
-              emissions: legEmission,
-            }],
-          },
+          legs: { create: [{ legOrder: 1, mode: "road", origin: "Johannesburg", destination: "Paarl", distanceKm: 350, emissionFactor: 0.105, emissions: legEm }] },
         },
       });
     }
   }
 
-  // Inbound: Global Raw Materials - sea from Shanghai + truck from CT port
-  for (let m = 0; m < 9; m += 3) {
-    const weight = 25;
-    const seaLeg = calculateTransportLeg(12000, weight, 0.015);
-    const truckLeg = calculateTransportLeg(60, weight, 0.105);
-    const totalEmissions = seaLeg + truckLeg;
-
+  // Inbound: Global Raw Materials - sea from Shanghai + truck (quarterly)
+  for (let m = 0; m < shippingMonths.length; m += 3) {
+    const seaLeg = calculateTransportLeg(12000, 25, 0.015);
+    const truckLeg = calculateTransportLeg(60, 25, 0.105);
     await prisma.shipment.create({
       data: {
-        reference: `INB-GRM-${months[m].replace("-", "")}`,
-        direction: "inbound",
-        supplierId: "sup-raw-imports",
+        reference: `INB-GRM-${shippingMonths[m].replace("-", "")}`,
+        direction: "inbound", supplierId: "sup-raw-imports",
         productDescription: "Imported raw materials (bulk)",
-        totalWeightTonnes: weight,
-        totalEmissions,
-        shipmentDate: new Date(`${months[m]}-10`),
+        totalWeightTonnes: 25, totalEmissions: seaLeg + truckLeg,
+        shipmentDate: new Date(`${shippingMonths[m]}-10`),
         reportingPeriodId: periodId,
-        notes: "Quarterly shipment from China via Cape Town port",
-        legs: {
-          create: [
-            {
-              legOrder: 1,
-              mode: "sea",
-              origin: "Shanghai, China",
-              destination: "Cape Town Port",
-              distanceKm: 12000,
-              emissionFactor: 0.015,
-              emissions: seaLeg,
-            },
-            {
-              legOrder: 2,
-              mode: "road",
-              origin: "Cape Town Port",
-              destination: "Paarl Factory",
-              distanceKm: 60,
-              emissionFactor: 0.105,
-              emissions: truckLeg,
-            },
-          ],
-        },
+        legs: { create: [
+          { legOrder: 1, mode: "sea", origin: "Shanghai, China", destination: "Cape Town Port", distanceKm: 12000, emissionFactor: 0.015, emissions: seaLeg },
+          { legOrder: 2, mode: "road", origin: "Cape Town Port", destination: "Paarl Factory", distanceKm: 60, emissionFactor: 0.105, emissions: truckLeg },
+        ] },
       },
     });
   }
 
-  // Inbound: IndTech Equipment - air from Munich + truck
-  const airLeg = calculateTransportLeg(9200, 2, 0.75);
-  const truckFromAirport = calculateTransportLeg(45, 2, 0.105);
-  await prisma.shipment.create({
-    data: {
-      reference: "INB-IND-202510",
-      direction: "inbound",
-      supplierId: "sup-equipment",
-      productDescription: "Replacement machine parts",
-      totalWeightTonnes: 2,
-      totalEmissions: airLeg + truckFromAirport,
-      shipmentDate: new Date("2025-10-20"),
-      reportingPeriodId: periodId,
-      notes: "Urgent equipment parts via air freight",
-      legs: {
-        create: [
-          {
-            legOrder: 1,
-            mode: "air",
-            origin: "Munich, Germany",
-            destination: "Cape Town International",
-            distanceKm: 9200,
-            emissionFactor: 0.75,
-            emissions: airLeg,
-          },
-          {
-            legOrder: 2,
-            mode: "road",
-            origin: "Cape Town Airport",
-            destination: "Paarl Factory",
-            distanceKm: 45,
-            emissionFactor: 0.105,
-            emissions: truckFromAirport,
-          },
-        ],
-      },
-    },
-  });
-
-  // Inbound: PackRight - truck from CT (short distance, 2x/month)
-  for (let m = 0; m < 9; m++) {
-    for (let d = 1; d <= 2; d++) {
-      const day = d === 1 ? 10 : 25;
-      const weight = 5;
-      const distance = 55;
-      const legEm = calculateTransportLeg(distance, weight, 0.105);
-
-      await prisma.shipment.create({
-        data: {
-          reference: `INB-PKG-${months[m].replace("-", "")}-${d}`,
-          direction: "inbound",
-          supplierId: "sup-packaging",
-          productDescription: "Packaging materials",
-          totalWeightTonnes: weight,
-          totalEmissions: legEm,
-          shipmentDate: new Date(`${months[m]}-${day}`),
-          reportingPeriodId: periodId,
-          legs: {
-            create: [{
-              legOrder: 1,
-              mode: "road",
-              origin: "Cape Town",
-              destination: "Paarl",
-              distanceKm: distance,
-              emissionFactor: 0.105,
-              emissions: legEm,
-            }],
-          },
-        },
-      });
-    }
-  }
-
-  // Outbound: Shoprite - truck to various DCs (3x/month)
-  for (let m = 0; m < 9; m++) {
+  // Outbound: Shoprite (3x/month)
+  for (let m = 0; m < shippingMonths.length; m++) {
     for (let d = 1; d <= 3; d++) {
       const day = d * 9;
-      const dayStr = day < 10 ? `0${day}` : `${day}`;
-      const weight = 8;
-      const distances = [120, 350, 200]; // CT DC, Stellenbosch, Worcester
-      const distance = distances[d - 1];
-      const legEm = calculateTransportLeg(distance, weight, 0.105);
-
+      const distances = [120, 350, 200];
+      const legEm = calculateTransportLeg(distances[d - 1], 8, 0.105);
       await prisma.shipment.create({
         data: {
-          reference: `OUT-SHP-${months[m].replace("-", "")}-${d}`,
-          direction: "outbound",
-          supplierId: "buy-retailer",
+          reference: `OUT-SHP-${shippingMonths[m].replace("-", "")}-${d}`,
+          direction: "outbound", supplierId: "buy-retailer",
           productDescription: "Finished products to Shoprite DC",
-          totalWeightTonnes: weight,
-          totalEmissions: legEm,
-          shipmentDate: new Date(`${months[m]}-${dayStr}`),
+          totalWeightTonnes: 8, totalEmissions: legEm,
+          shipmentDate: new Date(`${shippingMonths[m]}-${day < 10 ? "0" + day : day}`),
           reportingPeriodId: periodId,
-          legs: {
-            create: [{
-              legOrder: 1,
-              mode: "road",
-              origin: "Paarl Factory",
-              destination: d === 1 ? "Cape Town DC" : d === 2 ? "Stellenbosch DC" : "Worcester DC",
-              distanceKm: distance,
-              emissionFactor: 0.105,
-              emissions: legEm,
-            }],
-          },
+          legs: { create: [{ legOrder: 1, mode: "road", origin: "Paarl Factory", destination: d === 1 ? "Cape Town DC" : d === 2 ? "Stellenbosch DC" : "Worcester DC", distanceKm: distances[d - 1], emissionFactor: 0.105, emissions: legEm }] },
         },
       });
     }
   }
 
-  // Outbound: National Distributors - truck to Durban (2x/month)
-  for (let m = 0; m < 9; m++) {
+  // Outbound: National Distributors - Durban (2x/month)
+  for (let m = 0; m < shippingMonths.length; m++) {
     for (let d = 1; d <= 2; d++) {
       const day = d === 1 ? 5 : 20;
-      const weight = 15;
-      const distance = 1650;
-      const legEm = calculateTransportLeg(distance, weight, 0.105);
-
+      const legEm = calculateTransportLeg(1650, 15, 0.105);
       await prisma.shipment.create({
         data: {
-          reference: `OUT-NDI-${months[m].replace("-", "")}-${d}`,
-          direction: "outbound",
-          supplierId: "buy-distributor",
+          reference: `OUT-NDI-${shippingMonths[m].replace("-", "")}-${d}`,
+          direction: "outbound", supplierId: "buy-distributor",
           productDescription: "Bulk distribution to KZN",
-          totalWeightTonnes: weight,
-          totalEmissions: legEm,
-          shipmentDate: new Date(`${months[m]}-${day < 10 ? "0" + day : day}`),
+          totalWeightTonnes: 15, totalEmissions: legEm,
+          shipmentDate: new Date(`${shippingMonths[m]}-${day < 10 ? "0" + day : day}`),
           reportingPeriodId: periodId,
-          notes: "Long-haul to Durban distribution centre",
-          legs: {
-            create: [{
-              legOrder: 1,
-              mode: "road",
-              origin: "Paarl Factory",
-              destination: "Durban DC",
-              distanceKm: distance,
-              emissionFactor: 0.105,
-              emissions: legEm,
-            }],
-          },
+          legs: { create: [{ legOrder: 1, mode: "road", origin: "Paarl Factory", destination: "Durban DC", distanceKm: 1650, emissionFactor: 0.105, emissions: legEm }] },
         },
       });
     }
   }
 
-  // Outbound: East Africa Trading - truck to CT port + sea to Mombasa
-  for (let m = 0; m < 9; m += 2) {
-    const weight = 10;
-    const truckLeg = calculateTransportLeg(60, weight, 0.105);
-    const seaLeg = calculateTransportLeg(5500, weight, 0.015);
-    const total = truckLeg + seaLeg;
-
+  // Outbound: East Africa Trading - sea to Mombasa (bi-monthly)
+  for (let m = 0; m < shippingMonths.length; m += 2) {
+    const truckLeg = calculateTransportLeg(60, 10, 0.105);
+    const seaLeg = calculateTransportLeg(5500, 10, 0.015);
     await prisma.shipment.create({
       data: {
-        reference: `OUT-EAT-${months[m].replace("-", "")}`,
-        direction: "outbound",
-        supplierId: "buy-export",
+        reference: `OUT-EAT-${shippingMonths[m].replace("-", "")}`,
+        direction: "outbound", supplierId: "buy-export",
         productDescription: "Export to East Africa",
-        totalWeightTonnes: weight,
-        totalEmissions: total,
-        shipmentDate: new Date(`${months[m]}-18`),
+        totalWeightTonnes: 10, totalEmissions: truckLeg + seaLeg,
+        shipmentDate: new Date(`${shippingMonths[m]}-18`),
         reportingPeriodId: periodId,
-        notes: "Bi-monthly export via sea freight to Kenya",
-        legs: {
-          create: [
-            {
-              legOrder: 1,
-              mode: "road",
-              origin: "Paarl Factory",
-              destination: "Cape Town Port",
-              distanceKm: 60,
-              emissionFactor: 0.105,
-              emissions: truckLeg,
-            },
-            {
-              legOrder: 2,
-              mode: "sea",
-              origin: "Cape Town Port",
-              destination: "Mombasa, Kenya",
-              distanceKm: 5500,
-              emissionFactor: 0.015,
-              emissions: seaLeg,
-            },
-          ],
-        },
+        legs: { create: [
+          { legOrder: 1, mode: "road", origin: "Paarl Factory", destination: "Cape Town Port", distanceKm: 60, emissionFactor: 0.105, emissions: truckLeg },
+          { legOrder: 2, mode: "sea", origin: "Cape Town Port", destination: "Mombasa, Kenya", distanceKm: 5500, emissionFactor: 0.015, emissions: seaLeg },
+        ] },
       },
     });
   }
 
   console.log("Seeded shipments with transport legs");
-  console.log("Done! Database is fully populated.");
+  console.log("Done! Database populated with real 2025 data.");
 }
 
 main()
