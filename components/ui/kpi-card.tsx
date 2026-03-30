@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, TrendingUp, TrendingDown } from "lucide-react";
 
 interface KpiCardProps {
   title: string;
@@ -14,6 +14,7 @@ interface KpiCardProps {
   href?: string;
   sparklineData?: number[];
   sparklineColor?: string;
+  delta?: { value: number; label: string } | null;
 }
 
 function Sparkline({ data, color = "#22c55e" }: { data: number[]; color?: string }) {
@@ -21,8 +22,8 @@ function Sparkline({ data, color = "#22c55e" }: { data: number[]; color?: string
   const max = Math.max(...data);
   const min = Math.min(...data);
   const range = max - min || 1;
-  const h = 24;
-  const w = 64;
+  const h = 22;
+  const w = 56;
   const step = w / (data.length - 1);
 
   const points = data.map((v, i) => {
@@ -32,7 +33,7 @@ function Sparkline({ data, color = "#22c55e" }: { data: number[]; color?: string
   }).join(" ");
 
   return (
-    <svg width={w} height={h} className="mt-1">
+    <svg width={w} height={h}>
       <polyline
         points={points}
         fill="none"
@@ -55,51 +56,49 @@ export function KpiCard({
   href,
   sparklineData,
   sparklineColor,
+  delta,
 }: KpiCardProps) {
   const content = (
     <>
       <div className="flex items-start justify-between">
         {icon && (
-          <div className={cn("mb-3 inline-flex rounded-lg p-2.5", iconBgColor)}>
+          <div className={cn("mb-2 inline-flex rounded-lg p-2", iconBgColor)}>
             <div className={cn(iconColor)}>{icon}</div>
           </div>
         )}
-        {href && (
-          <ArrowUpRight className="h-4 w-4 text-gray-300 group-hover:text-emerald-500 transition-colors" />
-        )}
-      </div>
-      <div className="flex items-end justify-between">
-        <div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
-          <p className="mt-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400">{title}</p>
-          {subtitle && <p className="mt-0.5 text-xs text-gray-400">{subtitle}</p>}
-        </div>
-        {sparklineData && sparklineData.length >= 2 && (
+        {sparklineData && sparklineData.length >= 2 ? (
           <Sparkline data={sparklineData} color={sparklineColor} />
-        )}
+        ) : href ? (
+          <ArrowUpRight className="h-3.5 w-3.5 text-gray-300 group-hover:text-emerald-500 transition-colors" />
+        ) : null}
       </div>
-      {href && (
-        <p className="mt-2 text-[11px] font-medium text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity">
-          View details &rarr;
-        </p>
+      <p className="text-xl font-bold text-gray-900 dark:text-white leading-tight">{value}</p>
+      <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400">{title}</p>
+      {(subtitle || delta) && (
+        <div className="mt-1 flex items-center gap-2">
+          {subtitle && <p className="text-[11px] text-gray-400">{subtitle}</p>}
+          {delta && delta.value !== 0 && (
+            <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold ${
+              delta.value < 0 ? "text-emerald-600" : "text-red-500"
+            }`}>
+              {delta.value < 0 ? <TrendingDown className="h-3 w-3" /> : <TrendingUp className="h-3 w-3" />}
+              {delta.value > 0 ? "+" : ""}{delta.value.toFixed(1)}% {delta.label}
+            </span>
+          )}
+        </div>
       )}
     </>
   );
 
+  const cardClass = "rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm hover:shadow-md transition-all";
+
   if (href) {
     return (
-      <Link
-        href={href}
-        className="group block rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-sm hover:shadow-md hover:border-emerald-200 transition-all cursor-pointer"
-      >
+      <Link href={href} className={cn("group block cursor-pointer hover:border-emerald-200", cardClass)}>
         {content}
       </Link>
     );
   }
 
-  return (
-    <div className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-sm hover:shadow-md transition-shadow">
-      {content}
-    </div>
-  );
+  return <div className={cardClass}>{content}</div>;
 }

@@ -51,9 +51,18 @@ export default function DashboardPage() {
   const trendTitle = isMonthView ? "Emissions by Scope" : "Monthly Trend";
   const trendSubtitle = isMonthView ? `${monthLabel} ${selectedYear}` : `${selectedYear}`;
 
-  // Intensity: per-month average (total / months with data), not a duplicate
+  // Intensity: per-month average
   const monthsWithData = trend.length || 1;
   const intensity = total / monthsWithData;
+
+  // MoM delta calculations for KPI cards
+  function calcDelta(key: "total" | "scope1" | "scope2" | "scope3"): { value: number; label: string } | null {
+    if (trend.length < 2) return null;
+    const last = trend[trend.length - 1][key];
+    const prev = trend[trend.length - 2][key];
+    if (prev === 0) return null;
+    return { value: ((last - prev) / prev) * 100, label: "vs prev mo" };
+  }
 
   // Smart insights
   const insights: { icon: React.ReactNode; text: string; color: string }[] = [];
@@ -80,7 +89,7 @@ export default function DashboardPage() {
   if (intensity > 0 && !isMonthView) {
     insights.push({
       icon: <Activity className="h-3.5 w-3.5" />,
-      text: `Averaging ${formatNumber(intensity)} tCO2e per month across ${monthsWithData} months`,
+      text: `Averaging ${formatNumber(intensity)} tCO2e/month across ${monthsWithData} months`,
       color: "text-gray-600",
     });
   }
@@ -103,79 +112,90 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* KPI Row: Hero + 4 cards */}
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-6">
+      {/* KPI Row: 5 cards, hero slightly wider */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         {/* Hero: Total Emissions */}
         <Link
           href="/analytics"
-          className="lg:col-span-2 group flex flex-col justify-between rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-white dark:from-emerald-950 dark:via-gray-800 dark:to-gray-800 dark:border-emerald-800 p-5 shadow-sm hover:shadow-md hover:border-emerald-300 transition-all cursor-pointer"
+          className="col-span-2 lg:col-span-1 group flex flex-col justify-between rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-white dark:from-emerald-950 dark:via-gray-800 dark:to-gray-800 dark:border-emerald-800 p-4 shadow-sm hover:shadow-md hover:border-emerald-300 transition-all cursor-pointer"
         >
           <div className="flex items-center justify-between">
-            <div className="rounded-lg bg-emerald-100 dark:bg-emerald-900 p-2.5">
+            <div className="rounded-lg bg-emerald-100 dark:bg-emerald-900 p-2">
               <Activity className="h-5 w-5 text-emerald-700 dark:text-emerald-400" />
             </div>
-            <svg width={72} height={28} className="opacity-50">
+            <svg width={56} height={22} className="opacity-50">
               {trend.length >= 2 && (() => {
                 const data = trend.map((t) => t.total);
                 const max = Math.max(...data); const min = Math.min(...data);
-                const range = max - min || 1; const step = 72 / (data.length - 1);
-                const points = data.map((v, i) => `${i * step},${28 - ((v - min) / range) * 28}`).join(" ");
+                const range = max - min || 1; const step = 56 / (data.length - 1);
+                const points = data.map((v, i) => `${i * step},${22 - ((v - min) / range) * 22}`).join(" ");
                 return <polyline points={points} fill="none" stroke="#059669" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />;
               })()}
             </svg>
           </div>
-          <div className="mt-3">
-            <p className="text-2xl font-extrabold text-gray-900 dark:text-white">{formatNumber(total)}</p>
-            <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400">tCO2e total</p>
+          <div className="mt-2">
+            <p className="text-xl font-extrabold text-gray-900 dark:text-white">{formatNumber(total)}</p>
+            <p className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400">tCO2e total</p>
           </div>
-          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400">Total Emissions</p>
+          <div className="mt-1 flex items-center gap-2">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Total Emissions</p>
+            {calcDelta("total") && calcDelta("total")!.value !== 0 && (
+              <span className={`text-[10px] font-semibold ${calcDelta("total")!.value < 0 ? "text-emerald-600" : "text-red-500"}`}>
+                {calcDelta("total")!.value > 0 ? "+" : ""}{calcDelta("total")!.value.toFixed(1)}%
+              </span>
+            )}
+          </div>
         </Link>
 
-        {/* Scope 1-3 + Intensity */}
-        <div className="lg:col-span-4 grid grid-cols-2 gap-3 md:grid-cols-4">
-          <KpiCard
-            title="Scope 1"
-            value={`${formatNumber(stats?.scope1 ?? 0)} tCO2e`}
-            subtitle="Direct emissions"
-            icon={<Flame className="h-5 w-5" />}
-            iconColor="text-green-800"
-            iconBgColor="bg-green-100"
-            href="/emissions?scope=1"
-            sparklineData={trend.map((t) => t.scope1)}
-            sparklineColor="#166534"
-          />
-          <KpiCard
-            title="Scope 2"
-            value={`${formatNumber(stats?.scope2 ?? 0)} tCO2e`}
-            subtitle="Purchased energy"
-            icon={<Zap className="h-5 w-5" />}
-            iconColor="text-green-600"
-            iconBgColor="bg-green-50"
-            href="/emissions?scope=2"
-            sparklineData={trend.map((t) => t.scope2)}
-            sparklineColor="#22c55e"
-          />
-          <KpiCard
-            title="Scope 3"
-            value={`${formatNumber(stats?.scope3 ?? 0)} tCO2e`}
-            subtitle="Indirect emissions"
-            icon={<Globe className="h-5 w-5" />}
-            iconColor="text-emerald-500"
-            iconBgColor="bg-emerald-50"
-            href="/emissions?scope=3"
-            sparklineData={trend.map((t) => t.scope3)}
-            sparklineColor="#86efac"
-          />
-          <KpiCard
-            title="Intensity"
-            value={`${formatNumber(intensity)} tCO2e`}
-            subtitle={isMonthView ? "This month" : `Per month (${monthsWithData}mo avg)`}
-            icon={<Droplets className="h-5 w-5" />}
-            iconColor="text-teal-600"
-            iconBgColor="bg-teal-50"
-            href="/analytics"
-          />
-        </div>
+        {/* Scope 1 */}
+        <KpiCard
+          title="Scope 1"
+          value={`${formatNumber(stats?.scope1 ?? 0)} tCO2e`}
+          subtitle="Direct emissions"
+          icon={<Flame className="h-4 w-4" />}
+          iconColor="text-green-800"
+          iconBgColor="bg-green-100"
+          href="/emissions?scope=1"
+          sparklineData={trend.map((t) => t.scope1)}
+          sparklineColor="#166534"
+          delta={calcDelta("scope1")}
+        />
+        {/* Scope 2 */}
+        <KpiCard
+          title="Scope 2"
+          value={`${formatNumber(stats?.scope2 ?? 0)} tCO2e`}
+          subtitle="Purchased energy"
+          icon={<Zap className="h-4 w-4" />}
+          iconColor="text-green-600"
+          iconBgColor="bg-green-50"
+          href="/emissions?scope=2"
+          sparklineData={trend.map((t) => t.scope2)}
+          sparklineColor="#22c55e"
+          delta={calcDelta("scope2")}
+        />
+        {/* Scope 3 */}
+        <KpiCard
+          title="Scope 3"
+          value={`${formatNumber(stats?.scope3 ?? 0)} tCO2e`}
+          subtitle="Indirect emissions"
+          icon={<Globe className="h-4 w-4" />}
+          iconColor="text-emerald-500"
+          iconBgColor="bg-emerald-50"
+          href="/emissions?scope=3"
+          sparklineData={trend.map((t) => t.scope3)}
+          sparklineColor="#86efac"
+          delta={calcDelta("scope3")}
+        />
+        {/* Intensity — proper rate metric */}
+        <KpiCard
+          title="Monthly Avg"
+          value={`${formatNumber(intensity)} tCO2e`}
+          subtitle={isMonthView ? `${monthLabel} only` : `÷ ${monthsWithData} months`}
+          icon={<Droplets className="h-4 w-4" />}
+          iconColor="text-teal-600"
+          iconBgColor="bg-teal-50"
+          href="/analytics"
+        />
       </div>
 
       {/* Insight Strip */}
@@ -192,7 +212,7 @@ export default function DashboardPage() {
 
       {/* Compact Alert Banners */}
       {missingData && missingData.missingCount > 0 && (
-        <div className="flex items-center gap-2.5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5">
+        <Link href="/imports" className="flex items-center gap-2.5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 hover:bg-amber-100/80 transition-colors">
           <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
           <span className="text-xs font-semibold text-amber-800">
             {missingData.missingCount} missing data points
@@ -209,8 +229,8 @@ export default function DashboardPage() {
               </span>
             )}
           </div>
-          <a href="/imports" className="ml-auto text-[10px] font-semibold text-amber-700 hover:underline shrink-0">Import &rarr;</a>
-        </div>
+          <span className="ml-auto text-[10px] font-semibold text-amber-700 shrink-0">Import &rarr;</span>
+        </Link>
       )}
 
       {validationAlerts && validationAlerts.alertCount > 0 && (
@@ -369,28 +389,31 @@ export default function DashboardPage() {
 
       {/* Charts Row 2: By Source + Scope Breakdown */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {/* Emissions by Source */}
+        {/* Top 5 Sources — horizontal bars */}
         <div ref={sourceRef} className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 px-5 pt-4 pb-2 shadow-sm">
           <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">By Source</h3>
-            <PrintButton chartRef={sourceRef} title="Emissions By Source" getData={() => ({
+            <div className="flex items-baseline gap-2">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Top Sources</h3>
+              <span className="text-[11px] text-gray-400">by tCO2e</span>
+            </div>
+            <PrintButton chartRef={sourceRef} title="Top Emission Sources" getData={() => ({
               summary: `Top emission sources ranked by total tCO2e.`,
               headers: ["Source", "Scope", "Emissions (tCO2e)"],
-              rows: bySource.slice(0, 8).map((s) => [s.sourceName, `Scope ${s.scope}`, s.total.toFixed(2)]),
+              rows: bySource.slice(0, 5).map((s) => [s.sourceName, `Scope ${s.scope}`, s.total.toFixed(2)]),
             })} />
           </div>
           {bySource.length > 0 ? (
             <ResponsiveContainer width="100%" height={290}>
-              <BarChart data={bySource.slice(0, 8)} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="sourceName" tick={{ fontSize: 9, fill: "#6b7280" }} angle={-20} textAnchor="end" height={50} />
-                <YAxis tick={{ fontSize: 10, fill: "#9ca3af" }} />
+              <BarChart data={bySource.slice(0, 5)} layout="vertical" margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
+                <XAxis type="number" tick={{ fontSize: 10, fill: "#9ca3af" }} />
+                <YAxis type="category" dataKey="sourceName" tick={{ fontSize: 11, fill: "#4b5563" }} width={130} />
                 <Tooltip
                   contentStyle={{ borderRadius: 10, border: "1px solid #e5e7eb", fontSize: 12 }}
                   formatter={(value) => `${Number(value).toFixed(2)} tCO2e`}
                 />
-                <Bar dataKey="total" radius={[4, 4, 0, 0]}>
-                  {bySource.slice(0, 8).map((_entry, i) => (
+                <Bar dataKey="total" radius={[0, 4, 4, 0]} barSize={28}>
+                  {bySource.slice(0, 5).map((_entry, i) => (
                     <Cell key={i} fill={ACTIVITY_BAR_COLORS[i % ACTIVITY_BAR_COLORS.length]} />
                   ))}
                 </Bar>
