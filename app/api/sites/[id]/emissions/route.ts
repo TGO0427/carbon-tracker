@@ -36,7 +36,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }> = {};
 
   for (const e of emissions) {
-    const facilityName = e.unit?.name ?? "Unassigned";
+    const facilityName = e.unit?.name ?? "Site-wide";
     const unitKey = e.unitId ?? "unassigned";
 
     if (!facilityMap[facilityName]) {
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (!fac.units[unitKey]) {
       fac.units[unitKey] = {
         unitId: unitKey,
-        unitName: e.unit?.name ?? "Unassigned",
+        unitName: e.unit?.name ?? "Site-wide",
         unitNumber: e.unit?.number ?? null,
         scope1: 0, scope2: 0, scope3: 0, total: 0,
         sources: {},

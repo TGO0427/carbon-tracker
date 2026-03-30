@@ -57,16 +57,32 @@ interface SiteEmissions {
 type DrillLevel = "sites" | "facilities" | "units";
 
 export default function SitesPage() {
-  const { buildQuery } = useDateFilter();
+  const { buildQuery, selectedSiteId: sidebarSiteId } = useDateFilter();
   const [level, setLevel] = useState<DrillLevel>("sites");
   const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null);
   const [selectedFacility, setSelectedFacility] = useState<string | null>(null);
   const [siteData, setSiteData] = useState<Record<string, SiteEmissions>>({});
   const [loading, setLoading] = useState(true);
 
+  // Sync with sidebar site filter — auto-drill into selected site
+  useEffect(() => {
+    if (sidebarSiteId) {
+      setSelectedSiteId(sidebarSiteId);
+      setLevel("facilities");
+      setSelectedFacility(null);
+    } else {
+      setSelectedSiteId(null);
+      setLevel("sites");
+      setSelectedFacility(null);
+    }
+  }, [sidebarSiteId]);
+
   useEffect(() => {
     setLoading(true);
-    const q = buildQuery();
+    // Don't pass siteId in query for this page — we fetch all sites ourselves
+    const params = new URLSearchParams(buildQuery());
+    params.delete("siteId");
+    const q = params.toString();
     Promise.all(
       SITES.map((site) =>
         fetch(`/api/sites/${site.id}/emissions?${q}`)
