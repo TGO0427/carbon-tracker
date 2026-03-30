@@ -198,8 +198,8 @@ export function Sidebar() {
                       className={cn(
                         "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                         isActive
-                          ? "bg-emerald-400/15 text-emerald-300 border-l-[3px] border-emerald-400 -ml-px"
-                          : "text-white/60 hover:bg-white/5 hover:text-white/90"
+                          ? "bg-emerald-400/20 text-white border-l-[3px] border-emerald-400 -ml-px shadow-sm shadow-emerald-500/10"
+                          : "text-white/50 hover:bg-white/8 hover:text-white/90"
                       )}
                     >
                       <item.icon className="h-[18px] w-[18px]" />

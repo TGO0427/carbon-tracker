@@ -6,11 +6,11 @@ import { KpiCard } from "@/components/ui/kpi-card";
 import { Button } from "@/components/ui/button";
 import {
   Flame, Zap, Globe, Activity, Truck, Droplets,
-  Plus, Eye, AlertTriangle,
+  Plus, Eye, AlertTriangle, TrendingDown, TrendingUp, Lightbulb,
 } from "lucide-react";
 import type { DashboardStats, ScopeBreakdown, SourceBreakdown, TrendDataPoint } from "@/types";
 import {
-  PieChart, Pie, Cell, LineChart, Line, BarChart, Bar,
+  PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
 import type { PieLabelRenderProps } from "recharts";
@@ -26,7 +26,7 @@ export default function DashboardPage() {
   const [trend, setTrend] = useState<TrendDataPoint[]>([]);
   const [missingData, setMissingData] = useState<{ missingCount: number; missing: { facility: string; sourceName: string; month: string }[] } | null>(null);
   const [validationAlerts, setValidationAlerts] = useState<{ alertCount: number; alerts: { severity: string; message: string; facility: string; month: string }[] } | null>(null);
-  const { buildQuery, selectedYear } = useDateFilter();
+  const { buildQuery, selectedYear, selectedMonth } = useDateFilter();
 
   const trendRef = useRef<HTMLDivElement>(null);
   const donutRef = useRef<HTMLDivElement>(null);
@@ -45,93 +45,137 @@ export default function DashboardPage() {
 
   const total = stats?.total ?? 0;
 
+  // Generate smart insights
+  const insights: { icon: React.ReactNode; text: string; color: string }[] = [];
+  if (total > 0 && byScope.length > 0) {
+    const largest = [...byScope].sort((a, b) => b.total - a.total)[0];
+    insights.push({
+      icon: <Lightbulb className="h-3.5 w-3.5" />,
+      text: `${largest.label} is the largest contributor at ${largest.percentage.toFixed(0)}% of total emissions`,
+      color: "text-emerald-700",
+    });
+  }
+  if (trend.length >= 2) {
+    const last = trend[trend.length - 1];
+    const prev = trend[trend.length - 2];
+    const change = prev.total > 0 ? ((last.total - prev.total) / prev.total) * 100 : 0;
+    if (Math.abs(change) > 1) {
+      insights.push({
+        icon: change < 0 ? <TrendingDown className="h-3.5 w-3.5" /> : <TrendingUp className="h-3.5 w-3.5" />,
+        text: `${change < 0 ? "Down" : "Up"} ${Math.abs(change).toFixed(0)}% vs previous month (${last.month})`,
+        color: change < 0 ? "text-emerald-700" : "text-amber-700",
+      });
+    }
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-gray-500">Welcome back, Admin</p>
-          <h1 className="text-2xl font-bold text-gray-900">Emissions Overview</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Welcome back, Admin</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Emissions Overview</h1>
         </div>
         <div className="flex gap-2">
           <Link href="/emissions/new">
-            <Button>
-              <Plus className="h-4 w-4" /> Add Emission
-            </Button>
+            <Button><Plus className="h-4 w-4" /> Add Emission</Button>
           </Link>
           <Link href="/reports">
-            <Button variant="outline">
-              <Eye className="h-4 w-4" /> View Reports
-            </Button>
+            <Button variant="outline"><Eye className="h-4 w-4" /> View Reports</Button>
           </Link>
         </div>
       </div>
 
-      {/* KPI Cards Row */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
-        <KpiCard
-          title="Total Emissions"
-          value={`${formatNumber(total)} tCO2e`}
-          subtitle="tCO2e this period"
-          icon={<Activity className="h-5 w-5" />}
-          iconColor="text-emerald-600"
-          iconBgColor="bg-emerald-50"
-          href="/analytics"
-          sparklineData={trend.map((t) => t.total)}
-          sparklineColor="#059669"
-        />
-        <KpiCard
-          title="Scope 1"
-          value={`${formatNumber(stats?.scope1 ?? 0)} tCO2e`}
-          subtitle="Direct emissions"
-          icon={<Flame className="h-5 w-5" />}
-          iconColor="text-green-800"
-          iconBgColor="bg-green-100"
-          href="/emissions?scope=1"
-          sparklineData={trend.map((t) => t.scope1)}
-          sparklineColor="#166534"
-        />
-        <KpiCard
-          title="Scope 2"
-          value={`${formatNumber(stats?.scope2 ?? 0)} tCO2e`}
-          subtitle="Purchased energy"
-          icon={<Zap className="h-5 w-5" />}
-          iconColor="text-green-600"
-          iconBgColor="bg-green-50"
-          href="/emissions?scope=2"
-          sparklineData={trend.map((t) => t.scope2)}
-          sparklineColor="#22c55e"
-        />
-        <KpiCard
-          title="Scope 3"
-          value={`${formatNumber(stats?.scope3 ?? 0)} tCO2e`}
-          subtitle="Indirect emissions"
-          icon={<Globe className="h-5 w-5" />}
-          iconColor="text-emerald-500"
-          iconBgColor="bg-emerald-50"
-          href="/emissions?scope=3"
-          sparklineData={trend.map((t) => t.scope3)}
-          sparklineColor="#86efac"
-        />
-        <KpiCard
-          title="Logistics"
-          value={`${stats?.entryCount ?? 0}`}
-          subtitle="Total entries"
-          icon={<Truck className="h-5 w-5" />}
-          iconColor="text-green-700"
-          iconBgColor="bg-green-50"
-          href="/logistics"
-        />
-        <KpiCard
-          title="Intensity"
-          value={total > 0 ? `${formatNumber(total / 12)} tCO2e/mo` : "0.00 tCO2e/mo"}
-          subtitle="Avg monthly"
-          icon={<Droplets className="h-5 w-5" />}
-          iconColor="text-teal-600"
-          iconBgColor="bg-teal-50"
-          href="/analytics"
-        />
+      {/* Hero KPI Card + Other KPIs */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-6">
+        {/* Hero: Total Emissions — spans 2 cols */}
+        <div className="lg:col-span-2">
+          <Link
+            href="/analytics"
+            className="group flex flex-col justify-between rounded-xl border-2 border-emerald-200 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950 dark:to-gray-800 dark:border-emerald-800 p-6 shadow-sm hover:shadow-lg hover:border-emerald-300 transition-all cursor-pointer h-full"
+          >
+            <div className="flex items-center justify-between">
+              <div className="rounded-lg bg-emerald-100 dark:bg-emerald-900 p-3">
+                <Activity className="h-6 w-6 text-emerald-700 dark:text-emerald-400" />
+              </div>
+              <svg width={80} height={32} className="opacity-60">
+                {trend.length >= 2 && (() => {
+                  const data = trend.map((t) => t.total);
+                  const max = Math.max(...data);
+                  const min = Math.min(...data);
+                  const range = max - min || 1;
+                  const step = 80 / (data.length - 1);
+                  const points = data.map((v, i) => `${i * step},${32 - ((v - min) / range) * 32}`).join(" ");
+                  return <polyline points={points} fill="none" stroke="#059669" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />;
+                })()}
+              </svg>
+            </div>
+            <div className="mt-4">
+              <p className="text-3xl font-extrabold text-gray-900 dark:text-white">{formatNumber(total)}</p>
+              <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400">tCO2e total</p>
+            </div>
+            <p className="mt-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400">Total Emissions</p>
+          </Link>
+        </div>
+
+        {/* Scope 1-3 + Logistics + Intensity */}
+        <div className="lg:col-span-4 grid grid-cols-2 gap-4 md:grid-cols-4">
+          <KpiCard
+            title="Scope 1"
+            value={`${formatNumber(stats?.scope1 ?? 0)} tCO2e`}
+            subtitle="Direct emissions"
+            icon={<Flame className="h-5 w-5" />}
+            iconColor="text-green-800"
+            iconBgColor="bg-green-100"
+            href="/emissions?scope=1"
+            sparklineData={trend.map((t) => t.scope1)}
+            sparklineColor="#166534"
+          />
+          <KpiCard
+            title="Scope 2"
+            value={`${formatNumber(stats?.scope2 ?? 0)} tCO2e`}
+            subtitle="Purchased energy"
+            icon={<Zap className="h-5 w-5" />}
+            iconColor="text-green-600"
+            iconBgColor="bg-green-50"
+            href="/emissions?scope=2"
+            sparklineData={trend.map((t) => t.scope2)}
+            sparklineColor="#22c55e"
+          />
+          <KpiCard
+            title="Scope 3"
+            value={`${formatNumber(stats?.scope3 ?? 0)} tCO2e`}
+            subtitle="Indirect emissions"
+            icon={<Globe className="h-5 w-5" />}
+            iconColor="text-emerald-500"
+            iconBgColor="bg-emerald-50"
+            href="/emissions?scope=3"
+            sparklineData={trend.map((t) => t.scope3)}
+            sparklineColor="#86efac"
+          />
+          <KpiCard
+            title="Intensity"
+            value={total > 0 ? `${formatNumber(total / (trend.length || 12))} tCO2e` : "0.00 tCO2e"}
+            subtitle="Per month average"
+            icon={<Droplets className="h-5 w-5" />}
+            iconColor="text-teal-600"
+            iconBgColor="bg-teal-50"
+            href="/analytics"
+          />
+        </div>
       </div>
+
+      {/* Insight Strip */}
+      {insights.length > 0 && (
+        <div className="flex flex-wrap gap-4 rounded-lg bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 px-5 py-3">
+          {insights.map((ins, i) => (
+            <div key={i} className={`flex items-center gap-2 text-sm font-medium ${ins.color}`}>
+              {ins.icon}
+              {ins.text}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Missing Data Alert */}
       {missingData && missingData.missingCount > 0 && (
@@ -190,59 +234,92 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Charts Row 1: Trend + Scope Donut */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-        {/* Monthly Trend */}
-        <div ref={trendRef} className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm lg:col-span-3">
-          <div className="mb-4 flex items-center justify-between">
+      {/* Charts Row 1: Trend (stacked area) + Scope Donut */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-5">
+        {/* Monthly Trend — Stacked Area Chart */}
+        <div ref={trendRef} className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-sm lg:col-span-3">
+          <div className="mb-3 flex items-center justify-between">
             <div className="flex items-baseline gap-2">
-              <h3 className="text-base font-semibold text-gray-900">Monthly Trend</h3>
-              <span className="text-sm text-gray-400">Emissions by scope</span>
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white">Monthly Trend</h3>
+              <span className="text-sm text-gray-400">{selectedYear}</span>
             </div>
             <PrintButton chartRef={trendRef} title="Monthly Trend" getData={() => ({
-              summary: `Monthly emissions trend showing Scope 1, 2, and 3 breakdown. Total: ${formatNumber(total)} tCO2e.`,
+              summary: `Monthly emissions trend. Total: ${formatNumber(total)} tCO2e.`,
               headers: ["Month", "Scope 1 (tCO2e)", "Scope 2 (tCO2e)", "Scope 3 (tCO2e)", "Total (tCO2e)"],
               rows: trend.map((t) => [t.month, t.scope1.toFixed(2), t.scope2.toFixed(2), t.scope3.toFixed(2), t.total.toFixed(2)]),
             })} />
           </div>
-          {trend.length > 0 ? (
-            <ResponsiveContainer width="100%" height={280}>
-              <LineChart data={trend}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="month" tick={{ fontSize: 12, fill: "#9ca3af" }} />
-                <YAxis tick={{ fontSize: 12, fill: "#9ca3af" }} />
+          {trend.length > 1 ? (
+            <ResponsiveContainer width="100%" height={290}>
+              <AreaChart data={trend}>
+                <defs>
+                  <linearGradient id="gradScope1" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={SCOPE_CHART_COLORS[1]} stopOpacity={0.4} />
+                    <stop offset="100%" stopColor={SCOPE_CHART_COLORS[1]} stopOpacity={0.05} />
+                  </linearGradient>
+                  <linearGradient id="gradScope2" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={SCOPE_CHART_COLORS[2]} stopOpacity={0.4} />
+                    <stop offset="100%" stopColor={SCOPE_CHART_COLORS[2]} stopOpacity={0.05} />
+                  </linearGradient>
+                  <linearGradient id="gradScope3" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={SCOPE_CHART_COLORS[3]} stopOpacity={0.4} />
+                    <stop offset="100%" stopColor={SCOPE_CHART_COLORS[3]} stopOpacity={0.05} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#9ca3af" }} tickFormatter={(v: string) => v.split("-")[1]} />
+                <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} />
                 <Tooltip
-                  contentStyle={{ borderRadius: 8, border: "1px solid #e5e7eb", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }}
+                  contentStyle={{ borderRadius: 10, border: "1px solid #e5e7eb", boxShadow: "0 4px 12px rgb(0 0 0 / 0.08)" }}
                   formatter={(value) => `${Number(value).toFixed(2)} tCO2e`}
                 />
                 <Legend />
-                <Line type="monotone" dataKey="scope1" stroke={SCOPE_CHART_COLORS[1]} strokeWidth={2} dot={{ r: 4 }} name="Scope 1" />
-                <Line type="monotone" dataKey="scope2" stroke={SCOPE_CHART_COLORS[2]} strokeWidth={2} dot={{ r: 4 }} name="Scope 2" />
-                <Line type="monotone" dataKey="scope3" stroke={SCOPE_CHART_COLORS[3]} strokeWidth={2} dot={{ r: 4 }} name="Scope 3" />
-              </LineChart>
+                <Area type="monotone" dataKey="scope1" stackId="1" stroke={SCOPE_CHART_COLORS[1]} fill="url(#gradScope1)" strokeWidth={2} name="Scope 1" />
+                <Area type="monotone" dataKey="scope2" stackId="1" stroke={SCOPE_CHART_COLORS[2]} fill="url(#gradScope2)" strokeWidth={2} name="Scope 2" />
+                <Area type="monotone" dataKey="scope3" stackId="1" stroke={SCOPE_CHART_COLORS[3]} fill="url(#gradScope3)" strokeWidth={2} name="Scope 3" />
+              </AreaChart>
             </ResponsiveContainer>
+          ) : trend.length === 1 ? (
+            <div className="flex flex-col items-center justify-center h-[290px]">
+              <div className="grid grid-cols-3 gap-6 w-full max-w-md">
+                {[
+                  { label: "Scope 1", val: trend[0].scope1, color: SCOPE_CHART_COLORS[1] },
+                  { label: "Scope 2", val: trend[0].scope2, color: SCOPE_CHART_COLORS[2] },
+                  { label: "Scope 3", val: trend[0].scope3, color: SCOPE_CHART_COLORS[3] },
+                ].map((s) => (
+                  <div key={s.label} className="text-center">
+                    <div className="mx-auto h-20 w-3 rounded-full bg-gray-100 relative overflow-hidden">
+                      <div
+                        className="absolute bottom-0 w-full rounded-full transition-all"
+                        style={{ height: `${trend[0].total > 0 ? (s.val / trend[0].total) * 100 : 0}%`, backgroundColor: s.color }}
+                      />
+                    </div>
+                    <p className="mt-2 text-xs font-medium text-gray-600">{s.label}</p>
+                    <p className="text-sm font-bold text-gray-900">{formatNumber(s.val)}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-4 text-xs text-gray-400">Single month view — select "All Months" for trend</p>
+            </div>
           ) : (
-            <div className="flex h-[280px] items-center justify-center text-sm text-gray-400">
+            <div className="flex h-[290px] items-center justify-center text-sm text-gray-400">
               No trend data yet. Add emissions to see monthly breakdown.
             </div>
           )}
         </div>
 
         {/* Scope Distribution - Donut */}
-        <div ref={donutRef} className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm lg:col-span-2">
-          <div className="mb-4 flex items-center justify-between">
-            <div className="flex items-baseline gap-2">
-              <h3 className="text-base font-semibold text-gray-900">Scope Distribution</h3>
-              <span className="text-sm text-gray-400">By scope</span>
-            </div>
+        <div ref={donutRef} className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-sm lg:col-span-2">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white">Scope Distribution</h3>
             <PrintButton chartRef={donutRef} title="Scope Distribution" getData={() => ({
-              summary: `Scope distribution breakdown. Total emissions: ${formatNumber(total)} tCO2e.`,
+              summary: `Scope distribution. Total: ${formatNumber(total)} tCO2e.`,
               headers: ["Scope", "Emissions (tCO2e)", "Percentage"],
               rows: byScope.map((s) => [s.label, s.total.toFixed(2), `${s.percentage.toFixed(1)}%`]),
             })} />
           </div>
           {byScope.length > 0 && byScope.some((s) => s.total > 0) ? (
-            <ResponsiveContainer width="100%" height={280}>
+            <ResponsiveContainer width="100%" height={290}>
               <PieChart>
                 <Pie
                   data={byScope}
@@ -250,8 +327,8 @@ export default function DashboardPage() {
                   nameKey="label"
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={95}
+                  innerRadius={55}
+                  outerRadius={90}
                   paddingAngle={3}
                   label={(props: PieLabelRenderProps) => {
                     const name = props.name;
@@ -265,28 +342,23 @@ export default function DashboardPage() {
                   ))}
                 </Pie>
                 <Tooltip
-                  contentStyle={{ borderRadius: 8, border: "1px solid #e5e7eb" }}
+                  contentStyle={{ borderRadius: 10, border: "1px solid #e5e7eb" }}
                   formatter={(value) => `${Number(value).toFixed(2)} tCO2e`}
                 />
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex h-[280px] items-center justify-center text-sm text-gray-400">
-              No data yet.
-            </div>
+            <div className="flex h-[290px] items-center justify-center text-sm text-gray-400">No data yet.</div>
           )}
         </div>
       </div>
 
-      {/* Charts Row 2: By Source (vertical bar) + Scope Breakdown */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Emissions by Source - Vertical Bar Chart */}
-        <div ref={sourceRef} className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
-          <div className="mb-4 flex items-center justify-between">
-            <div className="flex items-baseline gap-2">
-              <h3 className="text-base font-semibold text-gray-900">By Source</h3>
-              <span className="text-sm text-gray-400">Total emissions by activity</span>
-            </div>
+      {/* Charts Row 2: By Source + Scope Breakdown */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        {/* Emissions by Source */}
+        <div ref={sourceRef} className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-sm">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white">By Source</h3>
             <PrintButton chartRef={sourceRef} title="Emissions By Source" getData={() => ({
               summary: `Top emission sources ranked by total tCO2e.`,
               headers: ["Source", "Scope", "Emissions (tCO2e)"],
@@ -294,13 +366,13 @@ export default function DashboardPage() {
             })} />
           </div>
           {bySource.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={280}>
               <BarChart data={bySource.slice(0, 8)}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="sourceName" tick={{ fontSize: 10, fill: "#6b7280" }} angle={-25} textAnchor="end" height={60} />
-                <YAxis tick={{ fontSize: 12, fill: "#9ca3af" }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="sourceName" tick={{ fontSize: 10, fill: "#6b7280" }} angle={-25} textAnchor="end" height={55} />
+                <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} />
                 <Tooltip
-                  contentStyle={{ borderRadius: 8, border: "1px solid #e5e7eb" }}
+                  contentStyle={{ borderRadius: 10, border: "1px solid #e5e7eb" }}
                   formatter={(value) => `${Number(value).toFixed(2)} tCO2e`}
                 />
                 <Bar dataKey="total" radius={[4, 4, 0, 0]}>
@@ -311,59 +383,51 @@ export default function DashboardPage() {
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex h-[300px] items-center justify-center text-sm text-gray-400">
-              No emission sources yet.
-            </div>
+            <div className="flex h-[280px] items-center justify-center text-sm text-gray-400">No emission sources yet.</div>
           )}
         </div>
 
         {/* Scope Breakdown */}
-        <div ref={breakdownRef} className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
-          <div className="mb-4 flex items-center justify-between">
-            <div className="flex items-baseline gap-2">
-              <h3 className="text-base font-semibold text-gray-900">Scope Breakdown</h3>
-              <span className="text-sm text-gray-400">tCO2e by scope</span>
-            </div>
+        <div ref={breakdownRef} className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-sm">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white">Scope Breakdown</h3>
             <PrintButton chartRef={breakdownRef} title="Scope Breakdown" getData={() => ({
               summary: `Scope breakdown summary. Total: ${formatNumber(total)} tCO2e.`,
               headers: ["Scope", "Description", "Emissions (tCO2e)", "Percentage"],
               rows: [
                 ["Scope 1", "Fleet fuel, LPG, refrigerants", (stats?.scope1 ?? 0).toFixed(2), total > 0 ? `${(((stats?.scope1 ?? 0) / total) * 100).toFixed(1)}%` : "0%"],
-                ["Scope 2", "Purchased electricity, steam", (stats?.scope2 ?? 0).toFixed(2), total > 0 ? `${(((stats?.scope2 ?? 0) / total) * 100).toFixed(1)}%` : "0%"],
-                ["Scope 3", "Travel, waste, water, logistics", (stats?.scope3 ?? 0).toFixed(2), total > 0 ? `${(((stats?.scope3 ?? 0) / total) * 100).toFixed(1)}%` : "0%"],
+                ["Scope 2", "Purchased electricity", (stats?.scope2 ?? 0).toFixed(2), total > 0 ? `${(((stats?.scope2 ?? 0) / total) * 100).toFixed(1)}%` : "0%"],
+                ["Scope 3", "Waste, water, logistics", (stats?.scope3 ?? 0).toFixed(2), total > 0 ? `${(((stats?.scope3 ?? 0) / total) * 100).toFixed(1)}%` : "0%"],
               ],
             })} />
           </div>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {[
-              { scope: 1, label: "Scope 1 - Direct", value: stats?.scope1 ?? 0, color: "#166534", desc: "Fleet fuel, LPG, refrigerants" },
-              { scope: 2, label: "Scope 2 - Energy", value: stats?.scope2 ?? 0, color: "#22c55e", desc: "Purchased electricity, steam" },
-              { scope: 3, label: "Scope 3 - Indirect", value: stats?.scope3 ?? 0, color: "#86efac", desc: "Travel, waste, water, logistics" },
+              { scope: 1, label: "Scope 1 - Direct", value: stats?.scope1 ?? 0, color: "#166534", desc: "Fleet diesel, LPG boiler & oven" },
+              { scope: 2, label: "Scope 2 - Energy", value: stats?.scope2 ?? 0, color: "#22c55e", desc: "Purchased electricity (Eskom)" },
+              { scope: 3, label: "Scope 3 - Indirect", value: stats?.scope3 ?? 0, color: "#86efac", desc: "Waste, water, logistics" },
             ].map((item) => (
-              <div key={item.scope} className="rounded-lg border border-gray-50 bg-gray-50/50 p-4">
+              <div key={item.scope} className="rounded-lg border border-gray-100 dark:border-gray-600 bg-gray-50/80 dark:bg-gray-700/50 p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
+                    <div className="h-3.5 w-3.5 rounded-full" style={{ backgroundColor: item.color }} />
                     <div>
-                      <p className="text-sm font-semibold text-gray-900">{item.label}</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{item.label}</p>
                       <p className="text-xs text-gray-400">{item.desc}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-bold text-gray-900">{formatNumber(item.value)}</p>
+                    <p className="text-lg font-bold text-gray-900 dark:text-white">{formatNumber(item.value)}</p>
                     <p className="text-xs text-gray-400">
                       {total > 0 ? `${((item.value / total) * 100).toFixed(1)}%` : "0%"}
                     </p>
                   </div>
                 </div>
                 {total > 0 && (
-                  <div className="mt-3 h-1.5 w-full rounded-full bg-gray-200">
+                  <div className="mt-3 h-2 w-full rounded-full bg-gray-200 dark:bg-gray-600">
                     <div
-                      className="h-1.5 rounded-full transition-all"
-                      style={{
-                        width: `${(item.value / total) * 100}%`,
-                        backgroundColor: item.color,
-                      }}
+                      className="h-2 rounded-full transition-all"
+                      style={{ width: `${(item.value / total) * 100}%`, backgroundColor: item.color }}
                     />
                   </div>
                 )}
