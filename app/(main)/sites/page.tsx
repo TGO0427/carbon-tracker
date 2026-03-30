@@ -372,7 +372,7 @@ export default function SitesPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {unit.sources.sort((a, b) => b.total - a.total).map((src, idx) => (
+                    {[...unit.sources].sort((a, b) => b.total - a.total).map((src, idx) => (
                       <tr key={idx} className="border-b last:border-0">
                         <td className="px-3 py-2 text-gray-700">{src.sourceName}</td>
                         <td className="px-3 py-2 text-right text-gray-500">
