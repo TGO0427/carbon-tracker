@@ -12,6 +12,7 @@ import type { DashboardStats, ScopeBreakdown, SourceBreakdown, TrendDataPoint } 
 import {
   PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  ReferenceLine,
 } from "recharts";
 import type { PieLabelRenderProps } from "recharts";
 import { SCOPE_CHART_COLORS, ACTIVITY_BAR_COLORS, MONTHS } from "@/lib/constants";
@@ -24,6 +25,7 @@ export default function DashboardPage() {
   const [byScope, setByScope] = useState<ScopeBreakdown[]>([]);
   const [bySource, setBySource] = useState<SourceBreakdown[]>([]);
   const [trend, setTrend] = useState<TrendDataPoint[]>([]);
+  const [fullYearTrend, setFullYearTrend] = useState<TrendDataPoint[]>([]);
   const [missingData, setMissingData] = useState<{ missingCount: number; missing: { facility: string; sourceName: string; month: string }[] } | null>(null);
   const [validationAlerts, setValidationAlerts] = useState<{ alertCount: number; alerts: { severity: string; message: string; facility: string; month: string }[] } | null>(null);
   const { buildQuery, selectedYear, selectedMonth } = useDateFilter();
@@ -39,6 +41,8 @@ export default function DashboardPage() {
     fetch(`/api/dashboard/by-scope?${q}`).then((r) => r.json()).then(setByScope).catch(() => {});
     fetch(`/api/dashboard/by-source?${q}`).then((r) => r.json()).then(setBySource).catch(() => {});
     fetch(`/api/dashboard/trend?${q}`).then((r) => r.json()).then(setTrend).catch(() => {});
+    // Always fetch full year for the trend chart (unfiltered by month)
+    fetch(`/api/dashboard/trend?year=${selectedYear}`).then((r) => r.json()).then(setFullYearTrend).catch(() => {});
     fetch(`/api/dashboard/missing-data?year=${selectedYear}`).then((r) => r.json()).then(setMissingData).catch(() => {});
     fetch(`/api/dashboard/validation?year=${selectedYear}`).then((r) => r.json()).then(setValidationAlerts).catch(() => {});
   }, [buildQuery, selectedYear]);
@@ -47,9 +51,11 @@ export default function DashboardPage() {
   const isMonthView = selectedMonth !== null;
   const monthLabel = selectedMonth ? MONTHS.find((m) => m.value === selectedMonth)?.label ?? "" : "";
 
-  // Chart title adapts to selection
-  const trendTitle = isMonthView ? "Emissions by Scope" : "Monthly Trend";
-  const trendSubtitle = isMonthView ? `${monthLabel} ${selectedYear}` : `${selectedYear}`;
+  // Chart title — always "Monthly Trend", subtitle shows highlight
+  const trendTitle = "Monthly Trend";
+  const trendSubtitle = isMonthView ? `${selectedYear} — ${monthLabel} highlighted` : `${selectedYear}`;
+  // The month key to highlight on the chart
+  const highlightMonth = selectedMonth ? `${selectedYear}-${String(selectedMonth).padStart(2, "0")}` : null;
 
   // Intensity: per-month average
   const monthsWithData = trend.length || 1;
@@ -271,9 +277,9 @@ export default function DashboardPage() {
               rows: trend.map((t) => [t.month, t.scope1.toFixed(2), t.scope2.toFixed(2), t.scope3.toFixed(2), t.total.toFixed(2)]),
             })} />
           </div>
-          {trend.length > 1 ? (
+          {fullYearTrend.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={trend} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
+              <AreaChart data={fullYearTrend} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
                 <defs>
                   <linearGradient id="gradScope1" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor={SCOPE_CHART_COLORS[1]} stopOpacity={0.35} />
@@ -307,33 +313,17 @@ export default function DashboardPage() {
                 <Area type="monotone" dataKey="scope1" stackId="1" stroke={SCOPE_CHART_COLORS[1]} fill="url(#gradScope1)" strokeWidth={2} name="Scope 1" />
                 <Area type="monotone" dataKey="scope2" stackId="1" stroke={SCOPE_CHART_COLORS[2]} fill="url(#gradScope2)" strokeWidth={2} name="Scope 2" />
                 <Area type="monotone" dataKey="scope3" stackId="1" stroke={SCOPE_CHART_COLORS[3]} fill="url(#gradScope3)" strokeWidth={2} name="Scope 3" />
+                {/* Highlight selected month */}
+                {highlightMonth && (
+                  <ReferenceLine
+                    x={highlightMonth}
+                    stroke="#064e3b"
+                    strokeWidth={2}
+                    strokeDasharray="4 2"
+                    label={{ value: monthLabel, position: "top", fill: "#064e3b", fontSize: 11, fontWeight: 600 }}
+                  />
+                )}
               </AreaChart>
-            </ResponsiveContainer>
-          ) : trend.length === 1 ? (
-            /* Single month: horizontal stacked bar */
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart
-                data={[
-                  { name: "Scope 1", value: trend[0].scope1, fill: SCOPE_CHART_COLORS[1] },
-                  { name: "Scope 2", value: trend[0].scope2, fill: SCOPE_CHART_COLORS[2] },
-                  { name: "Scope 3", value: trend[0].scope3, fill: SCOPE_CHART_COLORS[3] },
-                ]}
-                layout="vertical"
-                margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis type="number" tick={{ fontSize: 10, fill: "#9ca3af" }} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: "#6b7280" }} width={60} />
-                <Tooltip
-                  contentStyle={{ borderRadius: 10, border: "1px solid #e5e7eb", fontSize: 12 }}
-                  formatter={(value) => `${Number(value).toFixed(2)} tCO2e`}
-                />
-                <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                  {[SCOPE_CHART_COLORS[1], SCOPE_CHART_COLORS[2], SCOPE_CHART_COLORS[3]].map((color, i) => (
-                    <Cell key={i} fill={color} />
-                  ))}
-                </Bar>
-              </BarChart>
             </ResponsiveContainer>
           ) : (
             <div className="flex h-[300px] items-center justify-center text-sm text-gray-400">
