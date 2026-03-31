@@ -131,7 +131,7 @@ function EmissionsContent() {
             onClick={() => { setScopeFilter(s); setSelectedIds(new Set()); }}
             className={`rounded-full px-4 py-1.5 text-xs font-medium transition-all ${
               scopeFilter === s
-                ? "bg-emerald-600 text-white shadow-sm"
+                ? "bg-emerald-600 text-white shadow-sm ring-1 ring-emerald-700/20"
                 : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-emerald-300 hover:text-emerald-700"
             }`}
           >
@@ -167,7 +167,7 @@ function EmissionsContent() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50 dark:bg-gray-700/60 border-b border-gray-100 dark:border-gray-700">
-                  <th className="w-10 px-4 py-3">
+                  <th className="w-8 pl-3 pr-1 py-3">
                     <input
                       type="checkbox"
                       checked={emissions.length > 0 && selectedIds.size === emissions.length}
@@ -175,12 +175,12 @@ function EmissionsContent() {
                       className="h-3.5 w-3.5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
                     />
                   </th>
-                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Source</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Site</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Scope</th>
-                  <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-gray-400">Activity</th>
-                  <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-gray-400">tCO2e</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Date</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Source</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Site</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Scope</th>
+                  <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Activity</th>
+                  <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">tCO2e</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Date</th>
                   <th className="w-24 px-4 py-3"></th>
                 </tr>
               </thead>
@@ -194,7 +194,7 @@ function EmissionsContent() {
                         : "hover:bg-gray-50/80 dark:hover:bg-gray-700/30"
                     }`}
                   >
-                    <td className="px-4 py-3.5">
+                    <td className="pl-3 pr-1 py-3.5">
                       <input
                         type="checkbox"
                         checked={selectedIds.has(e.id)}
