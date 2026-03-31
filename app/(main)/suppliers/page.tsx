@@ -92,14 +92,14 @@ export default function SuppliersPage() {
             </div>
             <p className="mt-0.5 text-lg font-bold text-gray-900 dark:text-white">{suppliers.length}</p>
           </div>
-          <div className="rounded-lg border border-blue-100 dark:border-blue-900 bg-blue-50/30 dark:bg-blue-950/20 px-3.5 py-2.5">
+          <div className="rounded-lg border border-blue-100/70 dark:border-blue-900 bg-blue-50/20 dark:bg-blue-950/15 px-3.5 py-2.5">
             <div className="flex items-center gap-1.5">
               <Package className="h-3.5 w-3.5 text-blue-600" />
               <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Suppliers</span>
             </div>
             <p className="mt-0.5 text-base font-bold text-gray-900 dark:text-white">{supplierCount}</p>
           </div>
-          <div className="rounded-lg border border-amber-100 dark:border-amber-900 bg-amber-50/30 dark:bg-amber-950/20 px-3.5 py-2.5">
+          <div className="rounded-lg border border-amber-100/70 dark:border-amber-900 bg-amber-50/20 dark:bg-amber-950/15 px-3.5 py-2.5">
             <div className="flex items-center gap-1.5">
               <Users className="h-3.5 w-3.5 text-amber-600" />
               <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Buyers</span>
@@ -190,7 +190,7 @@ export default function SuppliersPage() {
                           </div>
                           <div>
                             <p className="font-medium text-gray-900 dark:text-white">{s.name}</p>
-                            {s.notes && <p className="text-[11px] text-gray-400 truncate max-w-[200px]">{s.notes}</p>}
+                            {s.notes && <p className="text-[10px] text-gray-400/70 dark:text-gray-500 truncate max-w-[200px]">{s.notes}</p>}
                           </div>
                         </div>
                       </td>
@@ -216,7 +216,7 @@ export default function SuppliersPage() {
                       </td>
                       <td className="px-4 py-3.5 text-right">
                         {em > 0 ? (
-                          <span className="font-semibold text-gray-900 dark:text-white">{formatNumber(em, 2)} <span className="text-[10px] font-normal text-gray-400">tCO2e</span></span>
+                          <span className="font-semibold text-gray-900 dark:text-white">{formatNumber(em, 2)}<span className="ml-0.5 text-[10px] font-normal text-gray-300 dark:text-gray-500">t</span></span>
                         ) : (
                           <span className="text-gray-400">-</span>
                         )}
