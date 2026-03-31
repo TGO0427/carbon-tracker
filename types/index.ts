@@ -117,6 +117,8 @@ export interface SourceBreakdown {
   sourceName: string;
   scope: number;
   total: number;
+  activityTotal?: number;
+  activityUnit?: string;
 }
 
 export interface TrendDataPoint {
