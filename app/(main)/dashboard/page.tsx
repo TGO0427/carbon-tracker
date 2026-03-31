@@ -424,76 +424,88 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Scope Summary — interpretive module (not a chart) */}
-        <div ref={breakdownRef} className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 px-5 pt-4 pb-5 shadow-sm flex flex-col">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Scope Summary</h3>
-            <PrintButton chartRef={breakdownRef} title="Scope Summary" getData={() => ({
-              summary: `Scope summary. Total: ${formatNumber(total)} tCO2e.`,
-              headers: ["Scope", "Description", "Emissions (tCO2e)", "Percentage"],
-              rows: [
-                ["Scope 1", "Fleet fuel, LPG", (stats?.scope1 ?? 0).toFixed(2), total > 0 ? `${(((stats?.scope1 ?? 0) / total) * 100).toFixed(1)}%` : "0%"],
-                ["Scope 2", "Purchased electricity", (stats?.scope2 ?? 0).toFixed(2), total > 0 ? `${(((stats?.scope2 ?? 0) / total) * 100).toFixed(1)}%` : "0%"],
-                ["Scope 3", "Waste, water, logistics", (stats?.scope3 ?? 0).toFixed(2), total > 0 ? `${(((stats?.scope3 ?? 0) / total) * 100).toFixed(1)}%` : "0%"],
-              ],
-            })} />
-          </div>
-
-          {/* Single stacked bar */}
-          {total > 0 && (
-            <div className="flex h-4 w-full overflow-hidden rounded-full">
-              {[
-                { value: stats?.scope1 ?? 0, color: "#166534" },
-                { value: stats?.scope2 ?? 0, color: "#22c55e" },
-                { value: stats?.scope3 ?? 0, color: "#86efac" },
-              ].map((s, i) => (
-                <div
-                  key={i}
-                  className="h-full transition-all"
-                  style={{ width: `${(s.value / total) * 100}%`, backgroundColor: s.color }}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* Three stat columns */}
-          <div className="mt-5 grid grid-cols-3 gap-4 flex-1">
+        {/* Insights + Scope Summary — executive summary panel */}
+        <div ref={breakdownRef} className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 px-5 pt-4 pb-4 shadow-sm flex flex-col">
+          {/* Scope Summary */}
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Scope Summary</h3>
+          <div className="space-y-3">
             {[
-              { scope: 1, label: "Scope 1", value: stats?.scope1 ?? 0, color: "#166534", icon: <Flame className="h-4 w-4" />, desc: "Direct" },
-              { scope: 2, label: "Scope 2", value: stats?.scope2 ?? 0, color: "#22c55e", icon: <Zap className="h-4 w-4" />, desc: "Energy" },
-              { scope: 3, label: "Scope 3", value: stats?.scope3 ?? 0, color: "#86efac", icon: <Globe className="h-4 w-4" />, desc: "Indirect" },
-            ].map((item) => (
-              <div key={item.scope} className="text-center">
-                <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full" style={{ backgroundColor: `${item.color}18` }}>
-                  <div style={{ color: item.color }}>{item.icon}</div>
+              { scope: 1, label: "Scope 1", value: stats?.scope1 ?? 0, color: "#166534", icon: <Flame className="h-3.5 w-3.5" />, desc: "Fleet diesel, LPG boiler & oven", deltaKey: "scope1" as const },
+              { scope: 2, label: "Scope 2", value: stats?.scope2 ?? 0, color: "#22c55e", icon: <Zap className="h-3.5 w-3.5" />, desc: "Purchased electricity (Eskom)", deltaKey: "scope2" as const },
+              { scope: 3, label: "Scope 3", value: stats?.scope3 ?? 0, color: "#86efac", icon: <Globe className="h-3.5 w-3.5" />, desc: "Waste, water, logistics", deltaKey: "scope3" as const },
+            ].map((item) => {
+              const pct = total > 0 ? ((item.value / total) * 100) : 0;
+              const delta = calcDelta(item.deltaKey);
+              return (
+                <div key={item.scope} className="flex items-center gap-3">
+                  {/* Icon */}
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: `${item.color}15` }}>
+                    <div style={{ color: item.color }}>{item.icon}</div>
+                  </div>
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-baseline justify-between">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{item.label}</p>
+                      <p className="text-sm font-bold text-gray-900 dark:text-white">{formatNumber(item.value)} <span className="text-[10px] font-normal text-gray-400">tCO2e</span></p>
+                    </div>
+                    <div className="flex items-center justify-between mt-0.5">
+                      <p className="text-[11px] text-gray-400 truncate">{item.desc}</p>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[11px] font-medium text-gray-500">{pct.toFixed(1)}%</span>
+                        {delta && delta.value !== 0 && (
+                          <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold ${delta.value < 0 ? "text-emerald-600" : "text-red-500"}`}>
+                            {delta.value < 0 ? <TrendingDown className="h-2.5 w-2.5" /> : <TrendingUp className="h-2.5 w-2.5" />}
+                            {delta.value > 0 ? "+" : ""}{delta.value.toFixed(0)}%
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {/* Micro bar — just a thin accent, not a full progress bar */}
+                    <div className="mt-1.5 h-[3px] w-full rounded-full bg-gray-100 dark:bg-gray-700">
+                      <div className="h-[3px] rounded-full" style={{ width: `${pct}%`, backgroundColor: item.color }} />
+                    </div>
+                  </div>
                 </div>
-                <p className="text-lg font-bold text-gray-900 dark:text-white">{formatNumber(item.value)}</p>
-                <p className="text-[11px] font-medium text-gray-500">{total > 0 ? `${((item.value / total) * 100).toFixed(0)}%` : "0%"}</p>
-                <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400">{item.label}</p>
-                <p className="text-[10px] text-gray-400">{item.desc}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
-          {/* Key insight at bottom */}
-          {total > 0 && byScope.length > 0 && (
-            <div className="mt-4 rounded-lg bg-gray-50 dark:bg-gray-700/50 px-3 py-2.5 text-center">
-              <p className="text-xs text-gray-600 dark:text-gray-300">
-                {(() => {
-                  const largest = [...byScope].sort((a, b) => b.total - a.total)[0];
-                  const smallest = [...byScope].sort((a, b) => a.total - b.total)[0];
-                  return (
-                    <>
-                      <span className="font-semibold">{largest.label}</span> dominates at {largest.percentage.toFixed(0)}% —
-                      {largest.label === "Scope 2" ? " electricity reduction " : largest.label === "Scope 1" ? " fuel efficiency " : " supply chain optimization "}
-                      offers the highest impact.
-                      {smallest.total > 0 && <> <span className="font-semibold">{smallest.label}</span> is only {smallest.percentage.toFixed(0)}%.</>}
-                    </>
-                  );
-                })()}
-              </p>
-            </div>
-          )}
+          {/* Divider */}
+          <div className="my-4 h-px bg-gray-100 dark:bg-gray-700" />
+
+          {/* Key Takeaways */}
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Key Takeaways</h4>
+          <ul className="space-y-1.5">
+            {(() => {
+              const takeaways: string[] = [];
+              if (total > 0 && byScope.length > 0) {
+                const largest = [...byScope].sort((a, b) => b.total - a.total)[0];
+                takeaways.push(
+                  largest.label === "Scope 2"
+                    ? `Scope 2 dominates at ${largest.percentage.toFixed(0)}% — electricity is the primary driver`
+                    : `${largest.label} is the largest contributor at ${largest.percentage.toFixed(0)}%`
+                );
+              }
+              if (bySource.length > 0) {
+                takeaways.push(`${bySource[0].sourceName} is the biggest emission source`);
+              }
+              if (byScope.length > 0) {
+                const smallest = [...byScope].sort((a, b) => a.total - b.total)[0];
+                if (smallest.percentage < 5) {
+                  takeaways.push(`${smallest.label} remains immaterial at ${smallest.percentage.toFixed(1)}%`);
+                }
+              }
+              if (missingData && missingData.missingCount > 0) {
+                takeaways.push(`${missingData.missingCount} missing data points may understate totals`);
+              }
+              return takeaways.map((t, i) => (
+                <li key={i} className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300">
+                  <span className="mt-1.5 h-1 w-1 rounded-full bg-emerald-500 shrink-0" />
+                  {t}
+                </li>
+              ));
+            })()}
+          </ul>
         </div>
       </div>
     </div>
