@@ -113,8 +113,11 @@ function EmissionsContent() {
               <p className="mt-0.5 text-base font-bold text-gray-900 dark:text-white">{formatNumber(s.val)} <span className="text-[10px] font-normal text-gray-400">{s.count} entries</span></p>
             </div>
           ))}
-          <div className="rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800 px-3.5 py-2.5">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Entries</span>
+          <div className="rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50/60 dark:bg-gray-800 px-3.5 py-2.5">
+            <div className="flex items-center gap-1.5">
+              <div className="h-1.5 w-1.5 rounded-full bg-gray-400" />
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Entries</span>
+            </div>
             <p className="mt-0.5 text-lg font-bold text-gray-900 dark:text-white">{emissions.length}</p>
           </div>
         </div>
@@ -163,7 +166,7 @@ function EmissionsContent() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-gray-50/80 dark:bg-gray-700/50">
+                <tr className="bg-gray-50 dark:bg-gray-700/60 border-b border-gray-100 dark:border-gray-700">
                   <th className="w-10 px-4 py-3">
                     <input
                       type="checkbox"
