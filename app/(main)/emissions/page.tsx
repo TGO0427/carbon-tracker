@@ -5,11 +5,10 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { ScopeBadge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Spinner } from "@/components/ui/spinner";
-import { Plus, Flame, Trash2, Pencil, X } from "lucide-react";
+import { Plus, Flame, Trash2, Pencil, X, Zap, Globe, Activity } from "lucide-react";
 import { formatNumber } from "@/lib/utils";
 import type { EmissionEntry } from "@/types";
 
@@ -69,8 +68,17 @@ function EmissionsContent() {
     }
   };
 
+  // Summary stats
+  const totalEmissions = emissions.reduce((s, e) => s + e.totalEmissions, 0);
+  const scope1Total = emissions.filter((e) => e.scope === 1).reduce((s, e) => s + e.totalEmissions, 0);
+  const scope2Total = emissions.filter((e) => e.scope === 2).reduce((s, e) => s + e.totalEmissions, 0);
+  const scope3Total = emissions.filter((e) => e.scope === 3).reduce((s, e) => s + e.totalEmissions, 0);
+  const scope1Count = emissions.filter((e) => e.scope === 1).length;
+  const scope2Count = emissions.filter((e) => e.scope === 2).length;
+  const scope3Count = emissions.filter((e) => e.scope === 3).length;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader
         title="Emission Sources"
         description="Track your Scope 1, 2, and 3 emissions"
@@ -81,26 +89,73 @@ function EmissionsContent() {
         }
       />
 
-      <div className="flex gap-2">
+      {/* Summary Strip */}
+      {!loading && emissions.length > 0 && (
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+          <div className="rounded-lg border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3">
+            <div className="flex items-center gap-2">
+              <Activity className="h-4 w-4 text-emerald-600" />
+              <span className="text-xs text-gray-400">Total</span>
+            </div>
+            <p className="mt-1 text-lg font-bold text-gray-900 dark:text-white">{formatNumber(totalEmissions)} <span className="text-xs font-normal text-gray-400">tCO2e</span></p>
+          </div>
+          <div className="rounded-lg border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3">
+            <div className="flex items-center gap-2">
+              <Flame className="h-4 w-4 text-green-800" />
+              <span className="text-xs text-gray-400">Scope 1</span>
+            </div>
+            <p className="mt-1 text-base font-bold text-gray-900 dark:text-white">{formatNumber(scope1Total)} <span className="text-[10px] font-normal text-gray-400">{scope1Count} entries</span></p>
+          </div>
+          <div className="rounded-lg border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3">
+            <div className="flex items-center gap-2">
+              <Zap className="h-4 w-4 text-green-600" />
+              <span className="text-xs text-gray-400">Scope 2</span>
+            </div>
+            <p className="mt-1 text-base font-bold text-gray-900 dark:text-white">{formatNumber(scope2Total)} <span className="text-[10px] font-normal text-gray-400">{scope2Count} entries</span></p>
+          </div>
+          <div className="rounded-lg border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3">
+            <div className="flex items-center gap-2">
+              <Globe className="h-4 w-4 text-emerald-500" />
+              <span className="text-xs text-gray-400">Scope 3</span>
+            </div>
+            <p className="mt-1 text-base font-bold text-gray-900 dark:text-white">{formatNumber(scope3Total)} <span className="text-[10px] font-normal text-gray-400">{scope3Count} entries</span></p>
+          </div>
+          <div className="rounded-lg border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-400">Entries</span>
+            </div>
+            <p className="mt-1 text-lg font-bold text-gray-900 dark:text-white">{emissions.length}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Filters */}
+      <div className="flex items-center gap-2">
         {["", "1", "2", "3"].map((s) => (
           <button
             key={s}
-            onClick={() => setScopeFilter(s)}
-            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+            onClick={() => { setScopeFilter(s); setSelectedIds(new Set()); }}
+            className={`rounded-full px-4 py-1.5 text-xs font-medium transition-all ${
               scopeFilter === s
-                ? "bg-emerald-600 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                ? "bg-emerald-600 text-white shadow-sm"
+                : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-emerald-300 hover:text-emerald-700"
             }`}
           >
             {s === "" ? "All" : `Scope ${s}`}
           </button>
         ))}
+        {emissions.length > 0 && (
+          <span className="ml-auto text-xs text-gray-400">
+            {emissions.length} {emissions.length === 1 ? "entry" : "entries"}
+          </span>
+        )}
       </div>
 
+      {/* Table */}
       {loading ? (
         <div className="flex justify-center py-12"><Spinner /></div>
       ) : emissions.length === 0 ? (
-        <Card>
+        <div className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
           <EmptyState
             icon={<Flame className="h-12 w-12" />}
             title="No emission entries yet"
@@ -111,64 +166,81 @@ function EmissionsContent() {
               </Link>
             }
           />
-        </Card>
+        </div>
       ) : (
-        <Card>
+        <div className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b bg-gray-50">
-                  <th className="px-4 py-3 text-left">
+                <tr className="bg-gray-50/80 dark:bg-gray-700/50">
+                  <th className="w-10 px-4 py-3">
                     <input
                       type="checkbox"
                       checked={emissions.length > 0 && selectedIds.size === emissions.length}
                       onChange={toggleSelectAll}
-                      className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                      className="h-3.5 w-3.5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
                     />
                   </th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Source</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Site</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Scope</th>
-                  <th className="px-4 py-3 text-right font-medium text-gray-500">Activity Data</th>
-                  <th className="px-4 py-3 text-right font-medium text-gray-500">Emissions (tCO2e)</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Date</th>
-                  <th className="px-4 py-3 text-right font-medium text-gray-500">Actions</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Source</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Site</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Scope</th>
+                  <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-gray-400">Activity</th>
+                  <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-gray-400">tCO2e</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-400">Date</th>
+                  <th className="w-24 px-4 py-3"></th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-50 dark:divide-gray-700/50">
                 {emissions.map((e) => (
-                  <tr key={e.id} className={`border-b last:border-0 hover:bg-gray-50 ${selectedIds.has(e.id) ? "bg-emerald-50" : ""}`}>
-                    <td className="px-4 py-3">
+                  <tr
+                    key={e.id}
+                    className={`transition-colors ${
+                      selectedIds.has(e.id)
+                        ? "bg-emerald-50/60 dark:bg-emerald-950/30"
+                        : "hover:bg-gray-50/80 dark:hover:bg-gray-700/30"
+                    }`}
+                  >
+                    <td className="px-4 py-3.5">
                       <input
                         type="checkbox"
                         checked={selectedIds.has(e.id)}
                         onChange={() => toggleSelect(e.id)}
-                        className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                        className="h-3.5 w-3.5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
                       />
                     </td>
-                    <td className="px-4 py-3 font-medium text-gray-900">{e.sourceName}</td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {e.site?.name ?? "—"}
-                      {e.unit?.name ? <span className="text-gray-400"> / {e.unit.name}{e.unit.number ? ` (${e.unit.number})` : ""}</span> : ""}
+                    <td className="px-4 py-3.5">
+                      <p className="font-medium text-gray-900 dark:text-white">{e.sourceName}</p>
                     </td>
-                    <td className="px-4 py-3"><ScopeBadge scope={e.scope} /></td>
-                    <td className="px-4 py-3 text-right text-gray-600">
-                      {formatNumber(e.activityData)} {e.activityUnit}
+                    <td className="px-4 py-3.5">
+                      <p className="text-gray-600 dark:text-gray-300">{e.site?.name ?? "—"}</p>
+                      {e.unit?.name && (
+                        <p className="text-[11px] text-gray-400">{e.unit.name}{e.unit.number ? ` (${e.unit.number})` : ""}</p>
+                      )}
                     </td>
-                    <td className="px-4 py-3 text-right font-semibold text-gray-900">
-                      {formatNumber(e.totalEmissions, 4)}
+                    <td className="px-4 py-3.5"><ScopeBadge scope={e.scope} /></td>
+                    <td className="px-4 py-3.5 text-right">
+                      <p className="text-gray-700 dark:text-gray-200">{formatNumber(e.activityData)}</p>
+                      <p className="text-[10px] text-gray-400">{e.activityUnit}</p>
                     </td>
-                    <td className="px-4 py-3 text-gray-500">
-                      {new Date(e.entryDate).toLocaleDateString()}
+                    <td className="px-4 py-3.5 text-right">
+                      <p className="font-semibold text-gray-900 dark:text-white">{formatNumber(e.totalEmissions, 4)}</p>
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex justify-end gap-1">
+                    <td className="px-4 py-3.5 text-gray-500 dark:text-gray-400 text-xs">
+                      {new Date(e.entryDate).toLocaleDateString("en-ZA", { day: "2-digit", month: "short", year: "numeric" })}
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <div className="flex justify-end gap-0.5">
                         <Link href={`/emissions/${e.id}`}>
-                          <Button variant="ghost" size="sm"><Pencil className="h-4 w-4" /></Button>
+                          <button className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 transition-colors">
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
                         </Link>
-                        <Button variant="ghost" size="sm" onClick={() => handleDelete(e.id)}>
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
+                        <button
+                          onClick={() => handleDelete(e.id)}
+                          className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-500 transition-colors"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -176,27 +248,29 @@ function EmissionsContent() {
               </tbody>
             </table>
           </div>
-        </Card>
+        </div>
       )}
 
+      {/* Floating bulk action bar */}
       {selectedIds.size > 0 && (
         <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 transform">
-          <div className="flex items-center gap-4 rounded-lg border border-gray-200 bg-white px-6 py-3 shadow-lg">
-            <span className="text-sm font-medium text-gray-700">
+          <div className="flex items-center gap-4 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-5 py-2.5 shadow-xl">
+            <span className="text-sm font-semibold text-gray-900 dark:text-white">
               {selectedIds.size} selected
             </span>
+            <div className="h-4 w-px bg-gray-200 dark:bg-gray-600" />
             <Button
               variant="danger"
               size="sm"
               onClick={handleBulkDelete}
             >
-              <Trash2 className="h-4 w-4" /> Delete Selected
+              <Trash2 className="h-3.5 w-3.5" /> Delete
             </Button>
             <button
               onClick={() => setSelectedIds(new Set())}
-              className="ml-1 rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+              className="rounded-full p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 transition-colors"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
