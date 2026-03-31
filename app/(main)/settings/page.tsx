@@ -87,16 +87,16 @@ export default function SettingsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b">
-                  <th className="px-3 py-2 text-left font-medium text-gray-500">Name</th>
-                  <th className="px-3 py-2 text-left font-medium text-gray-500">Start</th>
-                  <th className="px-3 py-2 text-left font-medium text-gray-500">End</th>
-                  <th className="px-3 py-2 text-center font-medium text-gray-500">Active</th>
-                  <th className="px-3 py-2 text-right font-medium text-gray-500">Actions</th>
+                  <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Name</th>
+                  <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Start</th>
+                  <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">End</th>
+                  <th className="px-3 py-2 text-center text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Active</th>
+                  <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {periods.map((p) => (
-                  <tr key={p.id} className="border-b last:border-0">
+                  <tr key={p.id} className="border-b border-gray-50 dark:border-gray-700/50 last:border-0 hover:bg-gray-50/80 dark:hover:bg-gray-700/30 transition-colors">
                     <td className="px-3 py-2 font-medium">{p.name}</td>
                     <td className="px-3 py-2 text-gray-600">{new Date(p.startDate).toLocaleDateString()}</td>
                     <td className="px-3 py-2 text-gray-600">{new Date(p.endDate).toLocaleDateString()}</td>

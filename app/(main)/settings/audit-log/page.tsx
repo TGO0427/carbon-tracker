@@ -113,17 +113,17 @@ export default function AuditLogPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b">
-                  <th className="px-3 py-2 text-left font-medium text-gray-500">Time</th>
-                  <th className="px-3 py-2 text-left font-medium text-gray-500">Action</th>
-                  <th className="px-3 py-2 text-left font-medium text-gray-500">Entity</th>
-                  <th className="px-3 py-2 text-left font-medium text-gray-500">Details</th>
-                  <th className="px-3 py-2 text-right font-medium text-gray-500">Count</th>
-                  <th className="px-3 py-2 text-left font-medium text-gray-500">User</th>
+                  <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Time</th>
+                  <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Action</th>
+                  <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Entity</th>
+                  <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Details</th>
+                  <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Count</th>
+                  <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">User</th>
                 </tr>
               </thead>
               <tbody>
                 {logs.map((log) => (
-                  <tr key={log.id} className="border-b last:border-0 hover:bg-gray-50">
+                  <tr key={log.id} className="border-b border-gray-50 dark:border-gray-700/50 last:border-0 hover:bg-gray-50/80 dark:hover:bg-gray-700/30 transition-colors">
                     <td className="whitespace-nowrap px-3 py-2 text-gray-600">
                       {new Date(log.createdAt).toLocaleString()}
                     </td>

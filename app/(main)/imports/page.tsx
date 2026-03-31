@@ -301,13 +301,13 @@ export default function ImportsPage() {
               <h4 className="mb-3 text-sm font-semibold text-gray-700">Facility Summary</h4>
               <table className="mb-6 w-full text-sm">
                 <thead>
-                  <tr className="border-b bg-gray-50">
-                    <th className="px-3 py-2 text-left font-medium text-gray-500">Facility</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-500">Type</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-500">Scope</th>
-                    <th className="px-3 py-2 text-right font-medium text-gray-500">Total</th>
-                    <th className="px-3 py-2 text-right font-medium text-gray-500">Months</th>
-                    <th className="px-3 py-2 text-right font-medium text-gray-500">tCO2e</th>
+                  <tr className="bg-gray-50 dark:bg-gray-700/60 border-b border-gray-100 dark:border-gray-700">
+                    <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Facility</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Type</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Scope</th>
+                    <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Total</th>
+                    <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Months</th>
+                    <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">tCO2e</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -345,12 +345,12 @@ export default function ImportsPage() {
               <div className="max-h-[400px] overflow-auto">
                 <table className="w-full text-sm">
                   <thead className="sticky top-0">
-                    <tr className="border-b bg-gray-50">
-                      <th className="px-3 py-2 text-left font-medium text-gray-500">Facility</th>
-                      <th className="px-3 py-2 text-left font-medium text-gray-500">Month</th>
-                      <th className="px-3 py-2 text-right font-medium text-gray-500">Activity</th>
-                      <th className="px-3 py-2 text-right font-medium text-gray-500">tCO2e</th>
-                      <th className="px-3 py-2 text-left font-medium text-gray-500">Units</th>
+                    <tr className="bg-gray-50 dark:bg-gray-700/60 border-b border-gray-100 dark:border-gray-700">
+                      <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Facility</th>
+                      <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Month</th>
+                      <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Activity</th>
+                      <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">tCO2e</th>
+                      <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Units</th>
                     </tr>
                   </thead>
                   <tbody>

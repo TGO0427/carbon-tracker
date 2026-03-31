@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Spinner } from "@/components/ui/spinner";
@@ -37,7 +36,7 @@ export default function LogisticsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader
         title="Logistics"
         description="Track inbound and outbound transport emissions"
@@ -48,24 +47,31 @@ export default function LogisticsPage() {
         }
       />
 
-      <div className="flex gap-2">
+      <div className="flex items-center gap-2">
         {["", "inbound", "outbound"].map((d) => (
           <button
             key={d}
             onClick={() => setDirFilter(d)}
-            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-              dirFilter === d ? "bg-emerald-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            className={`rounded-full px-4 py-1.5 text-xs font-medium transition-all ${
+              dirFilter === d
+                ? "bg-emerald-600 text-white shadow-sm ring-1 ring-emerald-700/20"
+                : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-emerald-300 hover:text-emerald-700"
             }`}
           >
             {d === "" ? "All" : d.charAt(0).toUpperCase() + d.slice(1)}
           </button>
         ))}
+        {shipments.length > 0 && (
+          <span className="ml-auto text-xs text-gray-400">
+            {shipments.length} {shipments.length === 1 ? "shipment" : "shipments"}
+          </span>
+        )}
       </div>
 
       {loading ? (
         <div className="flex justify-center py-12"><Spinner /></div>
       ) : shipments.length === 0 ? (
-        <Card>
+        <div className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
           <EmptyState
             icon={<Truck className="h-12 w-12" />}
             title="No shipments yet"
@@ -76,43 +82,51 @@ export default function LogisticsPage() {
               </Link>
             }
           />
-        </Card>
+        </div>
       ) : (
-        <Card>
+        <div className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b bg-gray-50">
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Reference</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Direction</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Supplier</th>
-                  <th className="px-4 py-3 text-right font-medium text-gray-500">Weight (t)</th>
-                  <th className="px-4 py-3 text-center font-medium text-gray-500">Legs</th>
-                  <th className="px-4 py-3 text-right font-medium text-gray-500">Emissions (tCO2e)</th>
-                  <th className="px-4 py-3 text-right font-medium text-gray-500">Actions</th>
+                <tr className="bg-gray-50 dark:bg-gray-700/60 border-b border-gray-100 dark:border-gray-700">
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Reference</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Direction</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Supplier</th>
+                  <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Weight (t)</th>
+                  <th className="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Legs</th>
+                  <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Emissions (tCO2e)</th>
+                  <th className="w-24 px-4 py-3"></th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-50 dark:divide-gray-700/50">
                 {shipments.map((s) => (
-                  <tr key={s.id} className="border-b last:border-0 hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium">{s.reference ?? "-"}</td>
-                    <td className="px-4 py-3">
+                  <tr key={s.id} className="hover:bg-gray-50/80 dark:hover:bg-gray-700/30 transition-colors">
+                    <td className="px-4 py-3.5 font-medium text-gray-900 dark:text-white">{s.reference ?? "-"}</td>
+                    <td className="px-4 py-3.5">
                       <Badge variant={s.direction === "inbound" ? "inbound" : "outbound"}>
                         {s.direction}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 text-gray-600">{s.supplier?.name ?? "-"}</td>
-                    <td className="px-4 py-3 text-right">{formatNumber(s.totalWeightTonnes)}</td>
-                    <td className="px-4 py-3 text-center">{s.legs?.length ?? 0}</td>
-                    <td className="px-4 py-3 text-right font-semibold">{formatNumber(s.totalEmissions, 4)}</td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex justify-end gap-1">
-                        <Link href={`/logistics/${s.id}`}>
-                          <Button variant="ghost" size="sm"><Pencil className="h-4 w-4" /></Button>
-                        </Link>
-                        <Button variant="ghost" size="sm" onClick={() => handleDelete(s.id)}>
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
+                    <td className="px-4 py-3.5 text-gray-600 dark:text-gray-300">{s.supplier?.name ?? "-"}</td>
+                    <td className="px-4 py-3.5 text-right text-gray-600 dark:text-gray-300">{formatNumber(s.totalWeightTonnes)}</td>
+                    <td className="px-4 py-3.5 text-center text-gray-600 dark:text-gray-300">{s.legs?.length ?? 0}</td>
+                    <td className="px-4 py-3.5 text-right font-semibold text-gray-900 dark:text-white">{formatNumber(s.totalEmissions, 4)}</td>
+                    <td className="px-4 py-3.5">
+                      <div className="flex justify-end">
+                        <div className="inline-flex rounded-lg border border-gray-100 dark:border-gray-700 overflow-hidden opacity-60 hover:opacity-100 transition-opacity">
+                          <Link href={`/logistics/${s.id}`}>
+                            <button className="px-2 py-1.5 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-emerald-600 transition-colors">
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                          </Link>
+                          <div className="w-px bg-gray-100 dark:bg-gray-700" />
+                          <button
+                            onClick={() => handleDelete(s.id)}
+                            className="px-2 py-1.5 text-gray-500 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-500 transition-colors"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                       </div>
                     </td>
                   </tr>
@@ -120,7 +134,7 @@ export default function LogisticsPage() {
               </tbody>
             </table>
           </div>
-        </Card>
+        </div>
       )}
     </div>
   );

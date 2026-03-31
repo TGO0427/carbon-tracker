@@ -142,15 +142,15 @@ export default function SitesPage() {
               <button
                 key={site.id}
                 onClick={() => { setSelectedSiteId(site.id); setLevel("facilities"); }}
-                className="group rounded-xl border border-gray-100 bg-white p-6 shadow-sm hover:shadow-md hover:border-emerald-200 transition-all text-left"
+                className="group rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-sm hover:shadow-md hover:border-emerald-200 dark:hover:border-emerald-700 transition-all text-left"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="rounded-lg bg-emerald-50 p-2.5">
+                    <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/40 p-2.5">
                       <MapPin className="h-5 w-5 text-emerald-600" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold text-gray-900">{site.name}</h3>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white">{site.name}</h3>
                       <p className="text-sm text-gray-400">{site.location}</p>
                     </div>
                   </div>
@@ -158,9 +158,9 @@ export default function SitesPage() {
                 </div>
 
                 <div className="mt-5 grid grid-cols-4 gap-3">
-                  <div className="rounded-lg bg-gray-50 p-3">
+                  <div className="rounded-lg bg-gray-50 dark:bg-gray-700/50 p-3">
                     <p className="text-xs font-medium text-gray-400">Total</p>
-                    <p className="text-lg font-bold text-gray-900">{formatNumber(total)}</p>
+                    <p className="text-lg font-bold text-gray-900 dark:text-white">{formatNumber(total)}</p>
                     <p className="text-[10px] text-gray-400">tCO2e</p>
                   </div>
                   {[
@@ -168,7 +168,7 @@ export default function SitesPage() {
                     { label: "Scope 2", val: data?.scope2 ?? 0, color: SCOPE_CHART_COLORS[2], icon: Zap },
                     { label: "Scope 3", val: data?.scope3 ?? 0, color: SCOPE_CHART_COLORS[3], icon: Globe },
                   ].map((s) => (
-                    <div key={s.label} className="rounded-lg bg-gray-50 p-3">
+                    <div key={s.label} className="rounded-lg bg-gray-50 dark:bg-gray-700/50 p-3">
                       <p className="text-xs font-medium text-gray-400">{s.label}</p>
                       <p className="text-lg font-bold" style={{ color: s.color }}>{formatNumber(s.val)}</p>
                       <p className="text-[10px] text-gray-400">tCO2e</p>
@@ -197,7 +197,7 @@ export default function SitesPage() {
               { label: "Scope 2", val: siteEmissions.scope2, color: SCOPE_CHART_COLORS[2] },
               { label: "Scope 3", val: siteEmissions.scope3, color: SCOPE_CHART_COLORS[3] },
             ].map((k) => (
-              <div key={k.label} className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+              <div key={k.label} className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-sm">
                 <p className="text-xs font-medium text-gray-400">{k.label}</p>
                 <p className="text-2xl font-bold" style={{ color: k.color }}>{formatNumber(k.val)}</p>
                 <p className="text-xs text-gray-400">tCO2e</p>
@@ -207,8 +207,8 @@ export default function SitesPage() {
 
           {/* Facility bar chart + cards */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <Card className="p-6">
-              <h3 className="mb-4 text-base font-semibold text-gray-900">Emissions by Facility</h3>
+            <Card className="p-5 dark:border-gray-700 dark:bg-gray-800">
+              <h3 className="mb-4 text-base font-semibold text-gray-900 dark:text-white">Emissions by Facility</h3>
               {siteEmissions.facilities.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={siteEmissions.facilities} layout="vertical">
@@ -231,8 +231,8 @@ export default function SitesPage() {
             </Card>
 
             {/* Scope pie for this site */}
-            <Card className="p-6">
-              <h3 className="mb-4 text-base font-semibold text-gray-900">Scope Distribution</h3>
+            <Card className="p-5 dark:border-gray-700 dark:bg-gray-800">
+              <h3 className="mb-4 text-base font-semibold text-gray-900 dark:text-white">Scope Distribution</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
@@ -259,7 +259,7 @@ export default function SitesPage() {
           </div>
 
           {/* Facility cards - clickable to drill into units */}
-          <h3 className="text-base font-semibold text-gray-900">Facilities</h3>
+          <h3 className="text-base font-semibold text-gray-900 dark:text-white">Facilities</h3>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {siteEmissions.facilities.map((fac) => {
               const pct = siteEmissions.total > 0 ? (fac.total / siteEmissions.total) * 100 : 0;
@@ -267,21 +267,21 @@ export default function SitesPage() {
                 <button
                   key={fac.facility}
                   onClick={() => { setSelectedFacility(fac.facility); setLevel("units"); }}
-                  className="group rounded-xl border border-gray-100 bg-white p-5 shadow-sm hover:shadow-md hover:border-emerald-200 transition-all text-left"
+                  className="group rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-sm hover:shadow-md hover:border-emerald-200 dark:hover:border-emerald-700 transition-all text-left"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2">
                       <Building2 className="h-4 w-4 text-emerald-600" />
-                      <h4 className="font-semibold text-gray-900">{fac.facility}</h4>
+                      <h4 className="font-semibold text-gray-900 dark:text-white">{fac.facility}</h4>
                     </div>
                     <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-emerald-500 transition-colors" />
                   </div>
-                  <p className="mt-3 text-2xl font-bold text-gray-900">{formatNumber(fac.total)} <span className="text-sm font-normal text-gray-400">tCO2e</span></p>
-                  <div className="mt-2 h-1.5 w-full rounded-full bg-gray-100">
+                  <p className="mt-3 text-2xl font-bold text-gray-900 dark:text-white">{formatNumber(fac.total)} <span className="text-sm font-normal text-gray-400">tCO2e</span></p>
+                  <div className="mt-2 h-1.5 w-full rounded-full bg-gray-100 dark:bg-gray-700">
                     <div className="h-1.5 rounded-full bg-emerald-500 transition-all" style={{ width: `${pct}%` }} />
                   </div>
                   <p className="mt-1 text-xs text-gray-400">{pct.toFixed(1)}% of site total</p>
-                  <div className="mt-3 flex gap-3 text-xs text-gray-500">
+                  <div className="mt-3 flex gap-3 text-xs text-gray-500 dark:text-gray-400">
                     <span><span className="inline-block h-2 w-2 rounded-full mr-1" style={{ backgroundColor: SCOPE_CHART_COLORS[1] }} />S1: {formatNumber(fac.scope1)}</span>
                     <span><span className="inline-block h-2 w-2 rounded-full mr-1" style={{ backgroundColor: SCOPE_CHART_COLORS[2] }} />S2: {formatNumber(fac.scope2)}</span>
                     <span><span className="inline-block h-2 w-2 rounded-full mr-1" style={{ backgroundColor: SCOPE_CHART_COLORS[3] }} />S3: {formatNumber(fac.scope3)}</span>
@@ -305,7 +305,7 @@ export default function SitesPage() {
               { label: "Scope 2", val: facilityData.scope2, color: SCOPE_CHART_COLORS[2] },
               { label: "Scope 3", val: facilityData.scope3, color: SCOPE_CHART_COLORS[3] },
             ].map((k) => (
-              <div key={k.label} className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+              <div key={k.label} className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-sm">
                 <p className="text-xs font-medium text-gray-400">{k.label}</p>
                 <p className="text-2xl font-bold" style={{ color: k.color }}>{formatNumber(k.val)}</p>
                 <p className="text-xs text-gray-400">tCO2e</p>
@@ -314,8 +314,8 @@ export default function SitesPage() {
           </div>
 
           {/* Units comparison bar chart */}
-          <Card className="p-6">
-            <h3 className="mb-4 text-base font-semibold text-gray-900">Emissions by Unit</h3>
+          <Card className="p-5 dark:border-gray-700 dark:bg-gray-800">
+            <h3 className="mb-4 text-base font-semibold text-gray-900 dark:text-white">Emissions by Unit</h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={facilityData.units.map((u) => ({ name: u.unitNumber ?? u.unitName, ...u }))}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -334,20 +334,20 @@ export default function SitesPage() {
           </Card>
 
           {/* Per-unit detail cards with source breakdown */}
-          <h3 className="text-base font-semibold text-gray-900">Unit Details</h3>
+          <h3 className="text-base font-semibold text-gray-900 dark:text-white">Unit Details</h3>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             {facilityData.units.map((unit) => (
-              <Card key={unit.unitId} className="p-5">
+              <Card key={unit.unitId} className="p-5 dark:border-gray-700 dark:bg-gray-800">
                 <div className="flex items-center gap-2 mb-4">
                   <Building2 className="h-4 w-4 text-emerald-600" />
-                  <h4 className="font-semibold text-gray-900">
+                  <h4 className="font-semibold text-gray-900 dark:text-white">
                     {unit.unitNumber ?? unit.unitName}
                   </h4>
-                  <span className="ml-auto text-lg font-bold text-gray-900">{formatNumber(unit.total)} <span className="text-sm font-normal text-gray-400">tCO2e</span></span>
+                  <span className="ml-auto text-lg font-bold text-gray-900 dark:text-white">{formatNumber(unit.total)} <span className="text-sm font-normal text-gray-400">tCO2e</span></span>
                 </div>
 
                 {/* Scope summary row */}
-                <div className="flex gap-4 mb-4 text-sm">
+                <div className="flex gap-4 mb-4 text-sm text-gray-600 dark:text-gray-300">
                   <span className="flex items-center gap-1">
                     <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: SCOPE_CHART_COLORS[1] }} />
                     Scope 1: {formatNumber(unit.scope1)}
@@ -365,20 +365,20 @@ export default function SitesPage() {
                 {/* Source breakdown table */}
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b bg-gray-50">
-                      <th className="px-3 py-2 text-left font-medium text-gray-500">Source</th>
-                      <th className="px-3 py-2 text-right font-medium text-gray-500">Activity</th>
-                      <th className="px-3 py-2 text-right font-medium text-gray-500">tCO2e</th>
+                    <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/60">
+                      <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Source</th>
+                      <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Activity</th>
+                      <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">tCO2e</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-gray-50 dark:divide-gray-700/50">
                     {[...unit.sources].sort((a, b) => b.total - a.total).map((src, idx) => (
-                      <tr key={idx} className="border-b last:border-0">
-                        <td className="px-3 py-2 text-gray-700">{src.sourceName}</td>
-                        <td className="px-3 py-2 text-right text-gray-500">
+                      <tr key={idx} className="transition-colors hover:bg-gray-50/80 dark:hover:bg-gray-700/30">
+                        <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{src.sourceName}</td>
+                        <td className="px-3 py-2 text-right text-gray-500 dark:text-gray-400">
                           {formatNumber(src.activityData)} {src.activityUnit}
                         </td>
-                        <td className="px-3 py-2 text-right font-semibold text-gray-900">{formatNumber(src.total, 4)}</td>
+                        <td className="px-3 py-2 text-right font-semibold text-gray-900 dark:text-white">{formatNumber(src.total, 4)}</td>
                       </tr>
                     ))}
                   </tbody>

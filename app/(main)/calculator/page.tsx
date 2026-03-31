@@ -194,10 +194,10 @@ export default function CalculatorPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b">
-                        <th className="py-2 text-left font-medium text-gray-500">Leg</th>
-                        <th className="py-2 text-left font-medium text-gray-500">Mode</th>
-                        <th className="py-2 text-right font-medium text-gray-500">Distance</th>
-                        <th className="py-2 text-right font-medium text-gray-500">Emissions</th>
+                        <th className="py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Leg</th>
+                        <th className="py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Mode</th>
+                        <th className="py-2 text-right text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Distance</th>
+                        <th className="py-2 text-right text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Emissions</th>
                       </tr>
                     </thead>
                     <tbody>

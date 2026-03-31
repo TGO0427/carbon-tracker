@@ -51,19 +51,19 @@ export default function EmissionFactorsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b bg-gray-50">
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Name</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Scope</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Category</th>
-                  <th className="px-4 py-3 text-right font-medium text-gray-500">Factor</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Unit</th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500">Source</th>
-                  <th className="px-4 py-3 text-right font-medium text-gray-500">Actions</th>
+                <tr className="bg-gray-50 dark:bg-gray-700/60 border-b border-gray-100 dark:border-gray-700">
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Name</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Scope</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Category</th>
+                  <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Factor</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Unit</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Source</th>
+                  <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {factors.map((f) => (
-                  <tr key={f.id} className="border-b last:border-0 hover:bg-gray-50">
+                  <tr key={f.id} className="border-b border-gray-50 dark:border-gray-700/50 last:border-0 hover:bg-gray-50/80 dark:hover:bg-gray-700/30 transition-colors">
                     <td className="px-4 py-3 font-medium text-gray-900">{f.name}</td>
                     <td className="px-4 py-3"><ScopeBadge scope={f.scope} /></td>
                     <td className="px-4 py-3 capitalize text-gray-600">{f.category}</td>
