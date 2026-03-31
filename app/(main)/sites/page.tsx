@@ -210,21 +210,34 @@ export default function SitesPage() {
             <Card className="p-5 dark:border-gray-700 dark:bg-gray-800 lg:col-span-3">
               <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Emissions by Facility</h3>
               {siteEmissions.facilities.length > 0 ? (
-                <ResponsiveContainer width="100%" height={Math.max(280, siteEmissions.facilities.length * 55)}>
-                  <BarChart data={siteEmissions.facilities} layout="vertical" margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
-                    <XAxis type="number" tick={{ fontSize: 10, fill: "#6b7280" }} />
-                    <YAxis type="category" dataKey="facility" tick={{ fontSize: 12, fill: "#374151" }} width={110} />
-                    <Tooltip
-                      contentStyle={{ borderRadius: 10, border: "1px solid #e5e7eb", fontSize: 12 }}
-                      formatter={(value) => `${Number(value).toFixed(2)} tCO2e`}
-                    />
-                    <Legend wrapperStyle={{ fontSize: 11 }} />
-                    <Bar dataKey="scope1" stackId="a" fill={SCOPE_CHART_COLORS[1]} name="Scope 1" />
-                    <Bar dataKey="scope2" stackId="a" fill={SCOPE_CHART_COLORS[2]} name="Scope 2" />
-                    <Bar dataKey="scope3" stackId="a" fill={SCOPE_CHART_COLORS[3]} name="Scope 3" />
-                  </BarChart>
-                </ResponsiveContainer>
+                <>
+                  {/* Sorted facility data, highest first */}
+                  <ResponsiveContainer width="100%" height={Math.max(300, siteEmissions.facilities.length * 70)}>
+                    <BarChart
+                      data={[...siteEmissions.facilities].sort((a, b) => b.total - a.total)}
+                      layout="vertical"
+                      margin={{ top: 5, right: 60, left: 0, bottom: 5 }}
+                      barSize={32}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={false} />
+                      <XAxis type="number" tick={{ fontSize: 11, fill: "#4b5563" }} />
+                      <YAxis type="category" dataKey="facility" tick={{ fontSize: 13, fill: "#1f2937", fontWeight: 500 }} width={110} />
+                      <Tooltip
+                        contentStyle={{ borderRadius: 10, border: "1px solid #e5e7eb", fontSize: 12, boxShadow: "0 4px 12px rgb(0 0 0 / 0.08)" }}
+                        formatter={(value) => `${Number(value).toFixed(2)} tCO2e`}
+                      />
+                      <Bar dataKey="scope1" stackId="a" fill={SCOPE_CHART_COLORS[1]} name="Scope 1" />
+                      <Bar dataKey="scope2" stackId="a" fill={SCOPE_CHART_COLORS[2]} name="Scope 2" />
+                      <Bar dataKey="scope3" stackId="a" fill={SCOPE_CHART_COLORS[3]} name="Scope 3" label={{ position: "right", fill: "#374151", fontSize: 11, fontWeight: 600, formatter: (v) => `${Number(v).toFixed(1)}` }} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                  {/* Inline legend — compact */}
+                  <div className="mt-2 flex items-center justify-center gap-5 text-xs text-gray-500">
+                    <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: SCOPE_CHART_COLORS[1] }} />Scope 1</span>
+                    <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: SCOPE_CHART_COLORS[2] }} />Scope 2</span>
+                    <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: SCOPE_CHART_COLORS[3] }} />Scope 3</span>
+                  </div>
+                </>
               ) : (
                 <p className="py-12 text-center text-sm text-gray-400">No emission data for this site.</p>
               )}
