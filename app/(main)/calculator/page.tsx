@@ -9,9 +9,8 @@ import { Button } from "@/components/ui/button";
 import { calculateEmission, calculateShipmentEmissions } from "@/lib/calculations";
 import { TRANSPORT_MODES } from "@/lib/constants";
 import { formatNumber } from "@/lib/utils";
-import { Plus, Trash2, MapPin } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import type { EmissionFactor } from "@/types";
-import { DistanceImporter } from "@/components/calculator/distance-importer";
 
 interface LegInput {
   mode: string;
@@ -20,7 +19,7 @@ interface LegInput {
 }
 
 export default function CalculatorPage() {
-  const [tab, setTab] = useState<"general" | "transport" | "distance">("general");
+  const [tab, setTab] = useState<"general" | "transport">("general");
   const [factors, setFactors] = useState<EmissionFactor[]>([]);
 
   // General calculator
@@ -83,19 +82,9 @@ export default function CalculatorPage() {
         >
           Transport Calculator
         </button>
-        <button
-          onClick={() => setTab("distance")}
-          className={`rounded-full px-4 py-1.5 text-xs font-medium transition-all ${
-            tab === "distance" ? "bg-emerald-600 text-white shadow-sm ring-1 ring-emerald-700/20" : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-emerald-300 hover:text-emerald-700"
-          }`}
-        >
-          <span className="flex items-center gap-1.5"><MapPin className="h-3 w-3" /> Distance Importer</span>
-        </button>
       </div>
 
-      {tab === "distance" ? (
-        <DistanceImporter />
-      ) : tab === "general" ? (
+      {tab === "general" ? (
         <div className="grid gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader><CardTitle>Calculate Emissions</CardTitle></CardHeader>

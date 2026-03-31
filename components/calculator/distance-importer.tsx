@@ -81,7 +81,7 @@ const STATUS_CONFIG = {
   error:      { bg: "bg-red-100 dark:bg-red-900/40", color: "text-red-700 dark:text-red-400", label: "Not found" },
 };
 
-export function DistanceImporter() {
+export function DistanceImporter({ onSaved }: { onSaved?: () => void } = {}) {
   const [records, setRecords] = useState<DistanceRecord[]>([]);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -207,6 +207,7 @@ export function DistanceImporter() {
         });
       }
       setSaved(true);
+      if (onSaved) onSaved();
     } catch {
       setStatusMsg("Failed to save some records.");
     } finally {
