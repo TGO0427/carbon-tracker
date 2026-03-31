@@ -91,40 +91,31 @@ function EmissionsContent() {
 
       {/* Summary Strip */}
       {!loading && emissions.length > 0 && (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-          <div className="rounded-lg border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3">
-            <div className="flex items-center gap-2">
-              <Activity className="h-4 w-4 text-emerald-600" />
-              <span className="text-xs text-gray-400">Total</span>
+        <div className="grid grid-cols-2 gap-2.5 md:grid-cols-5">
+          {/* Total — slightly more prominent */}
+          <div className="rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/30 px-3.5 py-2.5">
+            <div className="flex items-center gap-1.5">
+              <Activity className="h-3.5 w-3.5 text-emerald-600" />
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600/70">Total</span>
             </div>
-            <p className="mt-1 text-lg font-bold text-gray-900 dark:text-white">{formatNumber(totalEmissions)} <span className="text-xs font-normal text-gray-400">tCO2e</span></p>
+            <p className="mt-0.5 text-lg font-bold text-gray-900 dark:text-white">{formatNumber(totalEmissions)} <span className="text-[10px] font-normal text-gray-400">tCO2e</span></p>
           </div>
-          <div className="rounded-lg border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3">
-            <div className="flex items-center gap-2">
-              <Flame className="h-4 w-4 text-green-800" />
-              <span className="text-xs text-gray-400">Scope 1</span>
+          {[
+            { icon: <Flame className="h-3.5 w-3.5" />, color: "text-green-800", tint: "border-green-100 dark:border-green-900 bg-green-50/40 dark:bg-green-950/20", label: "Scope 1", val: scope1Total, count: scope1Count },
+            { icon: <Zap className="h-3.5 w-3.5" />, color: "text-green-600", tint: "border-green-100 dark:border-green-900 bg-green-50/30 dark:bg-green-950/20", label: "Scope 2", val: scope2Total, count: scope2Count },
+            { icon: <Globe className="h-3.5 w-3.5" />, color: "text-emerald-500", tint: "border-emerald-100 dark:border-emerald-900 bg-emerald-50/30 dark:bg-emerald-950/20", label: "Scope 3", val: scope3Total, count: scope3Count },
+          ].map((s) => (
+            <div key={s.label} className={`rounded-lg border ${s.tint} px-3.5 py-2.5`}>
+              <div className="flex items-center gap-1.5">
+                <div className={s.color}>{s.icon}</div>
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">{s.label}</span>
+              </div>
+              <p className="mt-0.5 text-base font-bold text-gray-900 dark:text-white">{formatNumber(s.val)} <span className="text-[10px] font-normal text-gray-400">{s.count} entries</span></p>
             </div>
-            <p className="mt-1 text-base font-bold text-gray-900 dark:text-white">{formatNumber(scope1Total)} <span className="text-[10px] font-normal text-gray-400">{scope1Count} entries</span></p>
-          </div>
-          <div className="rounded-lg border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3">
-            <div className="flex items-center gap-2">
-              <Zap className="h-4 w-4 text-green-600" />
-              <span className="text-xs text-gray-400">Scope 2</span>
-            </div>
-            <p className="mt-1 text-base font-bold text-gray-900 dark:text-white">{formatNumber(scope2Total)} <span className="text-[10px] font-normal text-gray-400">{scope2Count} entries</span></p>
-          </div>
-          <div className="rounded-lg border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3">
-            <div className="flex items-center gap-2">
-              <Globe className="h-4 w-4 text-emerald-500" />
-              <span className="text-xs text-gray-400">Scope 3</span>
-            </div>
-            <p className="mt-1 text-base font-bold text-gray-900 dark:text-white">{formatNumber(scope3Total)} <span className="text-[10px] font-normal text-gray-400">{scope3Count} entries</span></p>
-          </div>
-          <div className="rounded-lg border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-400">Entries</span>
-            </div>
-            <p className="mt-1 text-lg font-bold text-gray-900 dark:text-white">{emissions.length}</p>
+          ))}
+          <div className="rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800 px-3.5 py-2.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Entries</span>
+            <p className="mt-0.5 text-lg font-bold text-gray-900 dark:text-white">{emissions.length}</p>
           </div>
         </div>
       )}
@@ -229,18 +220,21 @@ function EmissionsContent() {
                       {new Date(e.entryDate).toLocaleDateString("en-ZA", { day: "2-digit", month: "short", year: "numeric" })}
                     </td>
                     <td className="px-4 py-3.5">
-                      <div className="flex justify-end gap-0.5">
-                        <Link href={`/emissions/${e.id}`}>
-                          <button className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 transition-colors">
-                            <Pencil className="h-3.5 w-3.5" />
+                      <div className="flex justify-end">
+                        <div className="inline-flex rounded-lg border border-gray-100 dark:border-gray-700 overflow-hidden opacity-60 group-hover:opacity-100 hover:opacity-100 transition-opacity">
+                          <Link href={`/emissions/${e.id}`}>
+                            <button className="px-2 py-1.5 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-emerald-600 transition-colors">
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                          </Link>
+                          <div className="w-px bg-gray-100 dark:bg-gray-700" />
+                          <button
+                            onClick={() => handleDelete(e.id)}
+                            className="px-2 py-1.5 text-gray-500 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-500 transition-colors"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
                           </button>
-                        </Link>
-                        <button
-                          onClick={() => handleDelete(e.id)}
-                          className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-500 transition-colors"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
+                        </div>
                       </div>
                     </td>
                   </tr>
