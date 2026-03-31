@@ -424,12 +424,12 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Scope Breakdown */}
-        <div ref={breakdownRef} className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 px-5 pt-4 pb-4 shadow-sm">
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Scope Breakdown</h3>
-            <PrintButton chartRef={breakdownRef} title="Scope Breakdown" getData={() => ({
-              summary: `Scope breakdown. Total: ${formatNumber(total)} tCO2e.`,
+        {/* Scope Summary — interpretive module (not a chart) */}
+        <div ref={breakdownRef} className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 px-5 pt-4 pb-5 shadow-sm flex flex-col">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Scope Summary</h3>
+            <PrintButton chartRef={breakdownRef} title="Scope Summary" getData={() => ({
+              summary: `Scope summary. Total: ${formatNumber(total)} tCO2e.`,
               headers: ["Scope", "Description", "Emissions (tCO2e)", "Percentage"],
               rows: [
                 ["Scope 1", "Fleet fuel, LPG", (stats?.scope1 ?? 0).toFixed(2), total > 0 ? `${(((stats?.scope1 ?? 0) / total) * 100).toFixed(1)}%` : "0%"],
@@ -438,39 +438,62 @@ export default function DashboardPage() {
               ],
             })} />
           </div>
-          <div className="space-y-3">
+
+          {/* Single stacked bar */}
+          {total > 0 && (
+            <div className="flex h-4 w-full overflow-hidden rounded-full">
+              {[
+                { value: stats?.scope1 ?? 0, color: "#166534" },
+                { value: stats?.scope2 ?? 0, color: "#22c55e" },
+                { value: stats?.scope3 ?? 0, color: "#86efac" },
+              ].map((s, i) => (
+                <div
+                  key={i}
+                  className="h-full transition-all"
+                  style={{ width: `${(s.value / total) * 100}%`, backgroundColor: s.color }}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Three stat columns */}
+          <div className="mt-5 grid grid-cols-3 gap-4 flex-1">
             {[
-              { scope: 1, label: "Scope 1 — Direct", value: stats?.scope1 ?? 0, color: "#166534", desc: "Fleet diesel, LPG boiler & oven" },
-              { scope: 2, label: "Scope 2 — Energy", value: stats?.scope2 ?? 0, color: "#22c55e", desc: "Purchased electricity (Eskom)" },
-              { scope: 3, label: "Scope 3 — Indirect", value: stats?.scope3 ?? 0, color: "#86efac", desc: "Waste, water, logistics" },
+              { scope: 1, label: "Scope 1", value: stats?.scope1 ?? 0, color: "#166534", icon: <Flame className="h-4 w-4" />, desc: "Direct" },
+              { scope: 2, label: "Scope 2", value: stats?.scope2 ?? 0, color: "#22c55e", icon: <Zap className="h-4 w-4" />, desc: "Energy" },
+              { scope: 3, label: "Scope 3", value: stats?.scope3 ?? 0, color: "#86efac", icon: <Globe className="h-4 w-4" />, desc: "Indirect" },
             ].map((item) => (
-              <div key={item.scope} className="rounded-lg border border-gray-100 dark:border-gray-600 bg-gray-50/80 dark:bg-gray-700/50 p-3.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{item.label}</p>
-                      <p className="text-[11px] text-gray-400">{item.desc}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-base font-bold text-gray-900 dark:text-white">{formatNumber(item.value)}</p>
-                    <p className="text-[11px] text-gray-400">
-                      {total > 0 ? `${((item.value / total) * 100).toFixed(1)}%` : "0%"}
-                    </p>
-                  </div>
+              <div key={item.scope} className="text-center">
+                <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full" style={{ backgroundColor: `${item.color}18` }}>
+                  <div style={{ color: item.color }}>{item.icon}</div>
                 </div>
-                {total > 0 && (
-                  <div className="mt-2.5 h-1.5 w-full rounded-full bg-gray-200 dark:bg-gray-600">
-                    <div
-                      className="h-1.5 rounded-full transition-all"
-                      style={{ width: `${(item.value / total) * 100}%`, backgroundColor: item.color }}
-                    />
-                  </div>
-                )}
+                <p className="text-lg font-bold text-gray-900 dark:text-white">{formatNumber(item.value)}</p>
+                <p className="text-[11px] font-medium text-gray-500">{total > 0 ? `${((item.value / total) * 100).toFixed(0)}%` : "0%"}</p>
+                <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400">{item.label}</p>
+                <p className="text-[10px] text-gray-400">{item.desc}</p>
               </div>
             ))}
           </div>
+
+          {/* Key insight at bottom */}
+          {total > 0 && byScope.length > 0 && (
+            <div className="mt-4 rounded-lg bg-gray-50 dark:bg-gray-700/50 px-3 py-2.5 text-center">
+              <p className="text-xs text-gray-600 dark:text-gray-300">
+                {(() => {
+                  const largest = [...byScope].sort((a, b) => b.total - a.total)[0];
+                  const smallest = [...byScope].sort((a, b) => a.total - b.total)[0];
+                  return (
+                    <>
+                      <span className="font-semibold">{largest.label}</span> dominates at {largest.percentage.toFixed(0)}% —
+                      {largest.label === "Scope 2" ? " electricity reduction " : largest.label === "Scope 1" ? " fuel efficiency " : " supply chain optimization "}
+                      offers the highest impact.
+                      {smallest.total > 0 && <> <span className="font-semibold">{smallest.label}</span> is only {smallest.percentage.toFixed(0)}%.</>}
+                    </>
+                  );
+                })()}
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
