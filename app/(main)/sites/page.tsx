@@ -190,36 +190,36 @@ export default function SitesPage() {
       {level === "facilities" && siteEmissions && (
         <>
           {/* Site totals KPI row */}
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             {[
-              { label: "Total Emissions", val: siteEmissions.total, color: "#059669" },
-              { label: "Scope 1", val: siteEmissions.scope1, color: SCOPE_CHART_COLORS[1] },
-              { label: "Scope 2", val: siteEmissions.scope2, color: SCOPE_CHART_COLORS[2] },
-              { label: "Scope 3", val: siteEmissions.scope3, color: SCOPE_CHART_COLORS[3] },
+              { label: "Total Emissions", val: siteEmissions.total, color: "#059669", accent: "border-emerald-200 dark:border-emerald-800 bg-emerald-50/40 dark:bg-emerald-950/20", isHero: true },
+              { label: "Scope 1", val: siteEmissions.scope1, color: SCOPE_CHART_COLORS[1], accent: "border-green-100 dark:border-green-900 bg-green-50/30 dark:bg-green-950/20", isHero: false },
+              { label: "Scope 2", val: siteEmissions.scope2, color: SCOPE_CHART_COLORS[2], accent: "border-green-100 dark:border-green-900 bg-green-50/20 dark:bg-green-950/20", isHero: false },
+              { label: "Scope 3", val: siteEmissions.scope3, color: SCOPE_CHART_COLORS[3], accent: "border-emerald-100 dark:border-emerald-900 bg-emerald-50/20 dark:bg-emerald-950/20", isHero: false },
             ].map((k) => (
-              <div key={k.label} className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-sm">
-                <p className="text-xs font-medium text-gray-400">{k.label}</p>
-                <p className="text-2xl font-bold" style={{ color: k.color }}>{formatNumber(k.val)}</p>
-                <p className="text-xs text-gray-400">tCO2e</p>
+              <div key={k.label} className={`rounded-xl border ${k.accent} p-4 shadow-sm`}>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">{k.label}</p>
+                <p className={`mt-1 ${k.isHero ? "text-2xl" : "text-xl"} font-bold`} style={{ color: k.color }}>{formatNumber(k.val)}</p>
+                <p className="text-[10px] text-gray-400">tCO2e</p>
               </div>
             ))}
           </div>
 
-          {/* Facility bar chart + cards */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <Card className="p-5 dark:border-gray-700 dark:bg-gray-800">
-              <h3 className="mb-4 text-base font-semibold text-gray-900 dark:text-white">Emissions by Facility</h3>
+          {/* Facility bar chart + donut */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
+            <Card className="p-5 dark:border-gray-700 dark:bg-gray-800 lg:col-span-3">
+              <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Emissions by Facility</h3>
               {siteEmissions.facilities.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={siteEmissions.facilities} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis type="number" tick={{ fontSize: 12, fill: "#9ca3af" }} />
-                    <YAxis type="category" dataKey="facility" tick={{ fontSize: 12, fill: "#6b7280" }} width={120} />
+                <ResponsiveContainer width="100%" height={Math.max(280, siteEmissions.facilities.length * 55)}>
+                  <BarChart data={siteEmissions.facilities} layout="vertical" margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
+                    <XAxis type="number" tick={{ fontSize: 10, fill: "#6b7280" }} />
+                    <YAxis type="category" dataKey="facility" tick={{ fontSize: 12, fill: "#374151" }} width={110} />
                     <Tooltip
-                      contentStyle={{ borderRadius: 8, border: "1px solid #e5e7eb" }}
+                      contentStyle={{ borderRadius: 10, border: "1px solid #e5e7eb", fontSize: 12 }}
                       formatter={(value) => `${Number(value).toFixed(2)} tCO2e`}
                     />
-                    <Legend />
+                    <Legend wrapperStyle={{ fontSize: 11 }} />
                     <Bar dataKey="scope1" stackId="a" fill={SCOPE_CHART_COLORS[1]} name="Scope 1" />
                     <Bar dataKey="scope2" stackId="a" fill={SCOPE_CHART_COLORS[2]} name="Scope 2" />
                     <Bar dataKey="scope3" stackId="a" fill={SCOPE_CHART_COLORS[3]} name="Scope 3" />
@@ -231,9 +231,9 @@ export default function SitesPage() {
             </Card>
 
             {/* Scope pie for this site */}
-            <Card className="p-5 dark:border-gray-700 dark:bg-gray-800">
-              <h3 className="mb-4 text-base font-semibold text-gray-900 dark:text-white">Scope Distribution</h3>
-              <ResponsiveContainer width="100%" height={300}>
+            <Card className="p-5 dark:border-gray-700 dark:bg-gray-800 lg:col-span-2">
+              <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Scope Distribution</h3>
+              <ResponsiveContainer width="100%" height={280}>
                 <PieChart>
                   <Pie
                     data={[
@@ -267,14 +267,16 @@ export default function SitesPage() {
                 <button
                   key={fac.facility}
                   onClick={() => { setSelectedFacility(fac.facility); setLevel("units"); }}
-                  className="group rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-sm hover:shadow-md hover:border-emerald-200 dark:hover:border-emerald-700 transition-all text-left"
+                  className="group rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm hover:shadow-lg hover:border-emerald-300 dark:hover:border-emerald-600 hover:-translate-y-0.5 transition-all text-left"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2">
                       <Building2 className="h-4 w-4 text-emerald-600" />
-                      <h4 className="font-semibold text-gray-900 dark:text-white">{fac.facility}</h4>
+                      <h4 className="text-sm font-semibold text-gray-900 dark:text-white">{fac.facility}</h4>
                     </div>
-                    <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-emerald-500 transition-colors" />
+                    <div className="flex items-center gap-1 rounded-full bg-gray-100 dark:bg-gray-700 px-2 py-0.5 text-[10px] font-medium text-gray-500 dark:text-gray-400 group-hover:bg-emerald-100 group-hover:text-emerald-700 dark:group-hover:bg-emerald-900 dark:group-hover:text-emerald-400 transition-colors">
+                      View <ChevronRight className="h-3 w-3" />
+                    </div>
                   </div>
                   <p className="mt-3 text-2xl font-bold text-gray-900 dark:text-white">{formatNumber(fac.total)} <span className="text-sm font-normal text-gray-400">tCO2e</span></p>
                   <div className="mt-2 h-1.5 w-full rounded-full bg-gray-100 dark:bg-gray-700">
@@ -298,17 +300,17 @@ export default function SitesPage() {
       {level === "units" && facilityData && (
         <>
           {/* Facility totals */}
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             {[
-              { label: "Facility Total", val: facilityData.total, color: "#059669" },
-              { label: "Scope 1", val: facilityData.scope1, color: SCOPE_CHART_COLORS[1] },
-              { label: "Scope 2", val: facilityData.scope2, color: SCOPE_CHART_COLORS[2] },
-              { label: "Scope 3", val: facilityData.scope3, color: SCOPE_CHART_COLORS[3] },
+              { label: "Facility Total", val: facilityData.total, color: "#059669", accent: "border-emerald-200 dark:border-emerald-800 bg-emerald-50/40 dark:bg-emerald-950/20" },
+              { label: "Scope 1", val: facilityData.scope1, color: SCOPE_CHART_COLORS[1], accent: "border-green-100 dark:border-green-900 bg-green-50/30 dark:bg-green-950/20" },
+              { label: "Scope 2", val: facilityData.scope2, color: SCOPE_CHART_COLORS[2], accent: "border-green-100 dark:border-green-900 bg-green-50/20 dark:bg-green-950/20" },
+              { label: "Scope 3", val: facilityData.scope3, color: SCOPE_CHART_COLORS[3], accent: "border-emerald-100 dark:border-emerald-900 bg-emerald-50/20 dark:bg-emerald-950/20" },
             ].map((k) => (
-              <div key={k.label} className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-sm">
-                <p className="text-xs font-medium text-gray-400">{k.label}</p>
-                <p className="text-2xl font-bold" style={{ color: k.color }}>{formatNumber(k.val)}</p>
-                <p className="text-xs text-gray-400">tCO2e</p>
+              <div key={k.label} className={`rounded-xl border ${k.accent} p-4 shadow-sm`}>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">{k.label}</p>
+                <p className="mt-1 text-xl font-bold" style={{ color: k.color }}>{formatNumber(k.val)}</p>
+                <p className="text-[10px] text-gray-400">tCO2e</p>
               </div>
             ))}
           </div>
