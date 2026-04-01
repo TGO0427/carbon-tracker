@@ -215,6 +215,22 @@ export function DistanceImporter({ onSaved }: { onSaved?: () => void } = {}) {
     }
   };
 
+  // ── Download template ────────────────────────────────────────────────────
+  const handleTemplate = () => {
+    const ws = XLSX.utils.aoa_to_sheet([
+      ["Place 1", "Place 2", "Transport Type"],
+      ["Pretoria", "Krugersdorp", "car"],
+      ["Cape Town", "Stellenbosch", "truck"],
+      ["Johannesburg", "Durban", "flight"],
+      ["Paarl", "Cape Town Port", "truck"],
+      ["", "", ""],
+    ]);
+    ws["!cols"] = [{ wch: 25 }, { wch: 25 }, { wch: 18 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Distance Data");
+    XLSX.writeFile(wb, "distance-importer-template.xlsx");
+  };
+
   // ── Export CSV ──────────────────────────────────────────────────────────────
   const handleExport = () => {
     const done = records.filter((r) => r.status === "done");
@@ -259,6 +275,13 @@ export function DistanceImporter({ onSaved }: { onSaved?: () => void } = {}) {
             <code className="rounded bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 text-[10px]">Place 2</code>{" "}
             — Optional: <code className="rounded bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 text-[10px]">Transport Type</code>
           </p>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); handleTemplate(); }}
+            className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:border-emerald-300 hover:text-emerald-700 transition-colors"
+          >
+            <Download className="h-3 w-3" /> Download Template
+          </button>
         </div>
         <input ref={fileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) parseFile(f); }} />
       </div>
